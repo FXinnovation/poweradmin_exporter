@@ -15,7 +15,7 @@ import (
 
 var (
 	configFile    = kingpin.Flag("config.file", "Exporter configuration file.").Default("config.yml").String()
-	listenAddress = kingpin.Flag("web.listen-address", "The address to listen on for HTTP requests.").Default(":1984").String()
+	listenAddress = kingpin.Flag("web.listen-address", "The address to listen on for HTTP requests.").Default(":9575").String()
 	metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
 	config        Config
 )
@@ -25,11 +25,11 @@ type Config struct {
 }
 
 func init() {
-	prometheus.MustRegister(version.NewCollector("my_exporter"))
+	prometheus.MustRegister(version.NewCollector("poweradmin_exporter"))
 }
 
 func main() {
-	kingpin.Version(version.Print("my_exporter"))
+	kingpin.Version(version.Print("poweradmin_exporter"))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 
@@ -44,9 +44,9 @@ func main() {
 	http.Handle(*metricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
-			<head><title>My Exporter</title></head>
+			<head><title>PowerAdmin Exporter</title></head>
 			<body>
-			<h1>My Exporter</h1>
+			<h1>PowerAdmin Exporter</h1>
 			<p><a href="` + *metricsPath + `">Metrics</a></p>
 			</body>
 			</html>`))

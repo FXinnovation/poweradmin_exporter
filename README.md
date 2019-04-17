@@ -1,6 +1,8 @@
 # poweradmin_exporter
 [![Build Status](https://travis-ci.org/FXinnovation/poweradmin_exporter.svg?branch=master)](https://travis-ci.org/FXinnovation/poweradmin_exporter)
 
+**WARNING - Work In Progress** 
+
 PowerAdmin exporter for Prometheus.
 
 Export metrics from PA - PowerAdmin (https://www.poweradmin.com/) monitoring solution.
