@@ -3,5 +3,5 @@ LABEL maintainer="FXinnovation CloudToolDevelopment <CloudToolDevelopment@fxinno
 
 COPY poweradmin_exporter /bin/poweradmin_exporter
 
-EXPOSE      9100
+EXPOSE      9575
 ENTRYPOINT  [ "/bin/poweradmin_exporter" ]
