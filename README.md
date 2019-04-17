@@ -1,7 +1,7 @@
 # poweradmin_exporter
 [![Build Status](https://travis-ci.org/FXinnovation/poweradmin_exporter.svg?branch=master)](https://travis-ci.org/FXinnovation/poweradmin_exporter)
 
-**WARNING - Work In Progress** 
+**WARNING - Work In Progress - this exporter is not ready to be used** 
 
 PowerAdmin exporter for Prometheus.
 
