@@ -36,8 +36,8 @@ The exporter listens on port 9575 by default, which can be changed if you need.
 
 ## Contributing
 
-Refer to [CONTRIBUTING.md](https://github.com/FXinnovation/exporter-template/blob/master/CONTRIBUTING.md).
+Refer to [CONTRIBUTING.md](https://github.com/FXinnovation/poweradmin_exporter/blob/master/CONTRIBUTING.md).
 
 ## License
 
-Apache License 2.0, see [LICENSE](https://github.com/FXinnovation/exporter-template/blob/master/LICENSE).
+Apache License 2.0, see [LICENSE](https://github.com/FXinnovation/poweradmin_exporter/blob/master/LICENSE).
