@@ -1,2 +1,6 @@
 # poweradmin_exporter
-PowerAdmin exporter for Prometheus
+**WIP**
+
+PowerAdmin exporter for Prometheus.
+
+Export metrics from PA - PowerAdmin (https://www.poweradmin.com/) monitoring solution.
