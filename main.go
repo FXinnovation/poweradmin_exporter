@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -43,13 +44,16 @@ func main() {
 
 	http.Handle(*metricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
+		_, err := w.Write([]byte(`<html>
 			<head><title>PowerAdmin Exporter</title></head>
 			<body>
 			<h1>PowerAdmin Exporter</h1>
 			<p><a href="` + *metricsPath + `">Metrics</a></p>
 			</body>
 			</html>`))
+		if err != nil {
+			log.Fatal(fmt.Errorf("Error writing index page content: %s", err))
+		}
 	})
 
 	log.Println("Beginning to serve on address ", *listenAddress)
