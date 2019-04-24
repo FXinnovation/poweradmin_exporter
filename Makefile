@@ -1,5 +1,4 @@
 GO    := GO15VENDOREXPERIMENT=1 go
-GOLANGCILINT := golangci-lint
 PROMU := $(GOPATH)/bin/promu
 pkgs   = $(shell $(GO) list ./... | grep -v /vendor/)
 SRC_DIR=github.com/fxinnovation/poweradmin_exporter
@@ -16,11 +15,7 @@ LDFLAGS=-ldflags "\
           -X $(SRC_DIR)/information.GitDirty=$(GIT_DIRTY) \
           -X $(SRC_DIR)/information.GitDescribe=$(GIT_DESCRIBE)"
 
-all: format build test
-
-clean: ## clean target for cover
-	@rm -rf ./target || true
-	@mkdir ./target || true
+all: lint format build test
 
 test: build ## running test after build
 	@echo ">> running tests"
@@ -28,9 +23,6 @@ test: build ## running test after build
 
 test-cover: style vet ## go test with coverage
 	@$(GO) test  $(pkgs) -cover -race -v $(LDFLAGS)
-
-test-coverage: clean style vet ## go test with coverage result file
-	gocov test $(pkgs) --short -cpu=2 -p=2 -v $(LDFLAGS) | gocov-xml > ./coverage-test.xml
 
 style: ## check code style
 	@echo ">> checking code style"
@@ -71,12 +63,12 @@ promu: ## gets promu for building
 
 lint: ## lint code
 	@echo ">> linting code"
-	@$(GOLANGCILINT) run
+	@! golint $(pkgs) | grep '^'
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-setup: ## downloads makefile dependencies
-	@go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+golint: ## downloads golint
+	@go get -u golang.org/x/lint/golint | grep 'ˆ'
 
 .PHONY: all style format dependencies build test vet tarball promu

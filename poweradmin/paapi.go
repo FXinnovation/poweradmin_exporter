@@ -14,13 +14,14 @@ const (
 	monitorInfoSuffix = "&API=GET_MONITOR_INFO&XML=1&CID=%s"
 )
 
+// MonitorInfos return of the GET_MONITOR_INFO call
 type MonitorInfos struct {
 	Infos []MonitorInfo `xml:"monitor"`
 }
 
 // MonitorInfo return of the GET_MONITOR_INFO call
 type MonitorInfo struct {
-	Id      string `xml:"id,attr"`
+	ID      string `xml:"id,attr"`
 	Status  string `xml:"status,attr"`
 	Title   string `xml:"title,attr"`
 	LastRun paTime `xml:"lastRun,attr"`
@@ -41,34 +42,31 @@ func (c *paTime) UnmarshalXMLAttr(attr xml.Attr) error {
 	return nil
 }
 
-type powerAdminConnection struct {
-	ApiKey       string
-	ServerUrl    string
-	ApiUrlString string
+// PAExternalAPIClient client for PowerAdmin External API struct
+type PAExternalAPIClient struct {
+	APIKey       string
+	ServerURL    string
+	APIURLString string
 	Client       *http.Client
 }
 
-func createPAClient(apiKey string, serverUrl string) powerAdminConnection {
-	return powerAdminConnection{
-		ApiKey:    apiKey,
-		ServerUrl: serverUrl,
+func createPAClient(apiKey string, serverURL string) PAExternalAPIClient {
+	return PAExternalAPIClient{
+		APIKey:    apiKey,
+		ServerURL: serverURL,
 		Client:    &http.Client{},
 	}
 }
 
-// MonitorInfoClient is a client to power admin
-type MonitorInfoClient powerAdminConnection
-
-// NewMonitorInfoClient creates a client for monitor info calls
-func NewMonitorInfoClient(apiKey string, serverUrl string) *MonitorInfoClient {
-	pa := createPAClient(apiKey, serverUrl)
-	mi := MonitorInfoClient(pa)
-	mi.ApiUrlString = fmt.Sprintf(paServerString, serverUrl, apiKey) + monitorInfoSuffix
-	return &mi
+// NewPAExternalAPIClient creates a client for monitor info calls
+func NewPAExternalAPIClient(apiKey string, serverURL string) *PAExternalAPIClient {
+	pa := createPAClient(apiKey, serverURL)
+	pa.APIURLString = fmt.Sprintf(paServerString, serverURL, apiKey) + monitorInfoSuffix
+	return &pa
 }
 
-func (pa powerAdminConnection) sendRequest(req *http.Request) ([]byte, error) {
-	resp, err := pa.Client.Do(req)
+func (client PAExternalAPIClient) sendRequest(req *http.Request) ([]byte, error) {
+	resp, err := client.Client.Do(req)
 	if err != nil {
 		log.Errorf("Error sending request: %v", err)
 		return nil, err
@@ -82,14 +80,15 @@ func (pa powerAdminConnection) sendRequest(req *http.Request) ([]byte, error) {
 	return data, err
 }
 
-func (m MonitorInfoClient) GetMonitorInfos(cid string) (*MonitorInfos, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf(m.ApiUrlString, cid), nil)
+// GetMonitorInfos returns monitorinfos for a cid
+func (client PAExternalAPIClient) GetMonitorInfos(cid string) (*MonitorInfos, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf(client.APIURLString, cid), nil)
 	if err != nil {
 		log.Errorf("Error building GetMonitorInfo request: %v", err)
 		return nil, err
 	}
 
-	resp, err := powerAdminConnection(m).sendRequest(req)
+	resp, err := client.sendRequest(req)
 	if err != nil {
 		log.Errorf("Error querying %s: %s", req.RequestURI, err.Error())
 		return nil, err
