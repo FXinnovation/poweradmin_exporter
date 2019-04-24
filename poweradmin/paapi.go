@@ -2,6 +2,7 @@ package poweradmin
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"github.com/prometheus/common/log"
 	"io/ioutil"
@@ -12,6 +13,8 @@ import (
 const (
 	paServerString    = "%s?KEY=%s"
 	monitorInfoSuffix = "&API=GET_MONITOR_INFO&XML=1&CID=%s"
+	groupListSuffix   = "&API=GET_GROUP_LIST&XML=1"
+	serverListSuffix  = "&API=GET_SERVER_LIST&XML=1&GID=%s"
 )
 
 // MonitorInfos return of the GET_MONITOR_INFO call
@@ -25,6 +28,34 @@ type MonitorInfo struct {
 	Status  string `xml:"status,attr"`
 	Title   string `xml:"title,attr"`
 	LastRun paTime `xml:"lastRun,attr"`
+}
+
+// GroupList return of the GET_GROUP_LIST call
+type GroupList struct {
+	Groups []Group `xml:"group"`
+}
+
+// Group return of the GET_GROUP_LIST call
+type Group struct {
+	ID       string `xml:"id,attr"`
+	Name     string `xml:"name,attr"`
+	Path     string `xml:"path,attr"`
+	ParentID string `xml:"parentID,attr"`
+}
+
+// ServerList return of the GET_Server_LIST call
+type ServerList struct {
+	Servers []Server `xml:"server"`
+}
+
+// Server return of the GET_Server_LIST call
+type Server struct {
+	ID      string `xml:"id,attr"`
+	Name    string `xml:"name,attr"`
+	Alias   string `xml:"alias,attr"`
+	Status  string `xml:"status,attr"`
+	GroupID string `xml:"groupID,attr"`
+	Group   string `xml:"group,attr"`
 }
 
 type paTime struct {
@@ -44,10 +75,12 @@ func (c *paTime) UnmarshalXMLAttr(attr xml.Attr) error {
 
 // PAExternalAPIClient client for PowerAdmin External API struct
 type PAExternalAPIClient struct {
-	APIKey       string
-	ServerURL    string
-	APIURLString string
-	Client       *http.Client
+	APIKey         string
+	ServerURL      string
+	MonitorInfoURL string
+	GroupListURL   string
+	ServerListURL  string
+	Client         *http.Client
 }
 
 func createPAClient(apiKey string, serverURL string) PAExternalAPIClient {
@@ -59,10 +92,16 @@ func createPAClient(apiKey string, serverURL string) PAExternalAPIClient {
 }
 
 // NewPAExternalAPIClient creates a client for monitor info calls
-func NewPAExternalAPIClient(apiKey string, serverURL string) *PAExternalAPIClient {
+func NewPAExternalAPIClient(apiKey string, serverURL string) (*PAExternalAPIClient, error) {
+	if apiKey == "" {
+		return nil, errors.New("API Key cannot be empty")
+	}
 	pa := createPAClient(apiKey, serverURL)
-	pa.APIURLString = fmt.Sprintf(paServerString, serverURL, apiKey) + monitorInfoSuffix
-	return &pa
+	paURL := fmt.Sprintf(paServerString, serverURL, apiKey)
+	pa.MonitorInfoURL = paURL + monitorInfoSuffix
+	pa.GroupListURL = paURL + groupListSuffix
+	pa.ServerListURL = paURL + serverListSuffix
+	return &pa, nil
 }
 
 func (client PAExternalAPIClient) sendRequest(req *http.Request) ([]byte, error) {
@@ -80,17 +119,25 @@ func (client PAExternalAPIClient) sendRequest(req *http.Request) ([]byte, error)
 	return data, err
 }
 
-// GetMonitorInfos returns monitorinfos for a cid
-func (client PAExternalAPIClient) GetMonitorInfos(cid string) (*MonitorInfos, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf(client.APIURLString, cid), nil)
+func (client PAExternalAPIClient) getResponse(requestURL string) ([]byte, error) {
+	req, err := http.NewRequest("GET", requestURL, nil)
 	if err != nil {
-		log.Errorf("Error building GetMonitorInfo request: %v", err)
+		log.Errorf("Error building request: %v", err)
 		return nil, err
 	}
 
 	resp, err := client.sendRequest(req)
 	if err != nil {
 		log.Errorf("Error querying %s: %s", req.RequestURI, err.Error())
+		return nil, err
+	}
+	return resp, err
+}
+
+// GetMonitorInfos returns monitorinfos for a cid
+func (client PAExternalAPIClient) GetMonitorInfos(cid string) (*MonitorInfos, error) {
+	resp, err := client.getResponse(fmt.Sprintf(client.MonitorInfoURL, cid))
+	if err != nil {
 		return nil, err
 	}
 	monitors := &MonitorInfos{}
@@ -100,4 +147,34 @@ func (client PAExternalAPIClient) GetMonitorInfos(cid string) (*MonitorInfos, er
 		return nil, err
 	}
 	return monitors, nil
+}
+
+// GetGroupList returns all groups
+func (client PAExternalAPIClient) GetGroupList() (*GroupList, error) {
+	resp, err := client.getResponse(client.GroupListURL)
+	if err != nil {
+		return nil, err
+	}
+	groups := &GroupList{}
+	err = xml.Unmarshal(resp, groups)
+	if err != nil {
+		log.Errorf("Error unmarshalling response %s", err)
+		return nil, err
+	}
+	return groups, nil
+}
+
+// GetServerList returns all groups
+func (client PAExternalAPIClient) GetServerList(gid string) (*ServerList, error) {
+	resp, err := client.getResponse(fmt.Sprintf(client.ServerListURL, gid))
+	if err != nil {
+		return nil, err
+	}
+	servers := &ServerList{}
+	err = xml.Unmarshal(resp, servers)
+	if err != nil {
+		log.Errorf("Error unmarshalling response %s", err)
+		return nil, err
+	}
+	return servers, nil
 }
