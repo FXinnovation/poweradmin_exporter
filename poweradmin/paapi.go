@@ -82,23 +82,23 @@ func (pa powerAdminConnection) sendRequest(req *http.Request) ([]byte, error) {
 	return data, err
 }
 
-func (m MonitorInfoClient) GetMonitorInfos(cid string) (MonitorInfos, error) {
+func (m MonitorInfoClient) GetMonitorInfos(cid string) (*MonitorInfos, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf(m.ApiUrlString, cid), nil)
 	if err != nil {
 		log.Errorf("Error building GetMonitorInfo request: %v", err)
-		return MonitorInfos{}, err
+		return nil, err
 	}
 
 	resp, err := powerAdminConnection(m).sendRequest(req)
 	if err != nil {
 		log.Errorf("Error querying %s: %s", req.RequestURI, err.Error())
-		return MonitorInfos{}, err
+		return nil, err
 	}
-	var monitors MonitorInfos
-	err = xml.Unmarshal(resp, &monitors)
+	monitors := &MonitorInfos{}
+	err = xml.Unmarshal(resp, monitors)
 	if err != nil {
 		log.Errorf("Error unmarshalling response %s", err)
-		return MonitorInfos{}, err
+		return nil, err
 	}
 	return monitors, nil
 }
