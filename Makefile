@@ -29,9 +29,8 @@ test: build ## running test after build
 test-cover: style vet ## go test with coverage
 	@$(GO) test  $(pkgs) -cover -race -v $(LDFLAGS)
 
-test-coverage: clean style vet ## go test coverage for jenkins
+test-coverage: clean style vet ## go test with coverage result file
 	gocov test $(pkgs) --short -cpu=2 -p=2 -v $(LDFLAGS) | gocov-xml > ./coverage-test.xml
-
 
 style: ## check code style
 	@echo ">> checking code style"
@@ -74,13 +73,10 @@ lint: ## lint code
 	@echo ">> linting code"
 	@$(GOLANGCILINT) run
 
-
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 setup: ## downloads makefile dependencies
 	@go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
-
-.DEFAULT_GOAL := help
 
 .PHONY: all style format dependencies build test vet tarball promu
