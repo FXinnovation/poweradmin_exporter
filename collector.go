@@ -5,27 +5,19 @@ import (
 )
 
 // Collector generic collector type
-type Collector struct {
-	firstMetric *prometheus.Desc
-}
+type Collector struct {}
 
 // NewCollector returns the collector
 func NewCollector() *Collector {
-	return &Collector{
-		firstMetric: prometheus.NewDesc("my_first_metric_name",
-			"Description of the first metric",
-			nil, nil,
-		),
-	}
+	return &Collector{}
 }
 
 // Describe to satisfy the collector interface.
 func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- c.firstMetric
+	ch <- prometheus.NewDesc("dummy", "dummy", nil, nil)
 }
 
 // Collect metrics from ...
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
-	collectedValue := 42.0
-	ch <- prometheus.MustNewConstMetric(c.firstMetric, prometheus.CounterValue, collectedValue)
+
 }
