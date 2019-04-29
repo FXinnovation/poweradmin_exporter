@@ -58,6 +58,19 @@ type Server struct {
 	Group   string `xml:"group,attr"`
 }
 
+// MonitoredValues the values retrieved
+type MonitoredValues struct {
+	Values []MonitoredValue
+}
+
+// MonitoredValue one value with its attributes
+type MonitoredValue struct {
+	MonitorTitle   string
+	MonitorValue   string
+	MonitorStatus  string
+	MonitorLastRun time.Time
+}
+
 type paTime struct {
 	time.Time
 }
@@ -177,4 +190,29 @@ func (client PAExternalAPIClient) GetServerList(gid string) (*ServerList, error)
 		return nil, err
 	}
 	return servers, nil
+}
+
+func (client PAExternalAPIClient) GetResources(gname string) (*MonitoredValues, error) {
+	groups, err := client.GetGroupList()
+	if err != nil {
+		return nil, err
+	}
+	for _, group := range groups.Groups {
+		if group.Name == gname {
+			servers, err := client.GetServerList(group.ID)
+			if err != nil {
+				return nil, err
+			}
+			for _, server := range servers.Servers {
+				values, err := client.GetMonitorInfos(server.ID)
+				if err != nil {
+					return nil, err
+				}
+				metrics := MonitoredValues{}
+				metrics.Values = make([]MonitoredValue, len(values.Infos))
+			}
+			break
+		}
+	}
+	return nil, errors.New("No group found")
 }
