@@ -23,6 +23,14 @@ var (
 
 // Config of the exporter
 type Config struct {
+	ServerURL string        `yaml:"server"`
+	APIKey    string        `yaml:"api_key"`
+	Groups    []GroupFilter `yaml:"group"`
+}
+
+// GroupFilter group selection
+type GroupFilter struct {
+	GroupName string `yaml:"name"`
 }
 
 func init() {

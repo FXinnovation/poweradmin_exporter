@@ -1,6 +1,7 @@
 package poweradmin
 
 import (
+	"crypto/tls"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -69,6 +70,8 @@ type MonitoredValue struct {
 	MonitorValue   string
 	MonitorStatus  string
 	MonitorLastRun time.Time
+	ServerID       string
+	GroupID        string
 }
 
 type paTime struct {
@@ -97,10 +100,13 @@ type PAExternalAPIClient struct {
 }
 
 func createPAClient(apiKey string, serverURL string) PAExternalAPIClient {
+	transCfg := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // ignore expired SSL certificates
+	}
 	return PAExternalAPIClient{
 		APIKey:    apiKey,
 		ServerURL: serverURL,
-		Client:    &http.Client{},
+		Client:    &http.Client{Transport: transCfg},
 	}
 }
 
@@ -192,25 +198,38 @@ func (client PAExternalAPIClient) GetServerList(gid string) (*ServerList, error)
 	return servers, nil
 }
 
-func (client PAExternalAPIClient) GetResources(gname string) (*MonitoredValues, error) {
+// GetResources get the monitor values for a group name
+func (client PAExternalAPIClient) GetResources(groupName string) (*MonitoredValues, error) {
 	groups, err := client.GetGroupList()
 	if err != nil {
 		return nil, err
 	}
 	for _, group := range groups.Groups {
-		if group.Name == gname {
+		if group.Name == groupName {
 			servers, err := client.GetServerList(group.ID)
 			if err != nil {
 				return nil, err
 			}
+			metrics := MonitoredValues{}
+			metrics.Values = make([]MonitoredValue, 0)
 			for _, server := range servers.Servers {
 				values, err := client.GetMonitorInfos(server.ID)
 				if err != nil {
 					return nil, err
 				}
-				metrics := MonitoredValues{}
-				metrics.Values = make([]MonitoredValue, len(values.Infos))
+				for _, metric := range values.Infos {
+					newMetric := MonitoredValue{
+						GroupID:        group.ID,
+						ServerID:       server.ID,
+						MonitorValue:   metric.Status,
+						MonitorStatus:  metric.Status,
+						MonitorTitle:   metric.Title,
+						MonitorLastRun: metric.LastRun.Time,
+					}
+					metrics.Values = append(metrics.Values, newMetric)
+				}
 			}
+			return &metrics, nil
 			break
 		}
 	}
