@@ -46,8 +46,12 @@ func main() {
 	log.Println("Build context", version.BuildContext())
 
 	config = loadConfig(*configFile)
+	powerAdminClient, err := NewPAExternalAPIClient(config.APIKey, config.ServerURL)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	collector := NewCollector()
+	collector := NewCollector(powerAdminClient)
 	prometheus.MustRegister(collector)
 
 	http.Handle(*metricsPath, promhttp.Handler())

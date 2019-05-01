@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/FXInnovation/poweradmin_exporter/poweradmin"
 	"github.com/prometheus/client_golang/prometheus"
 	"log"
 	"regexp"
@@ -14,11 +13,13 @@ var (
 )
 
 // Collector generic collector type
-type Collector struct{}
+type Collector struct {
+	PowerAdminClient *PAExternalAPI
+}
 
 // NewCollector returns the collector
-func NewCollector() *Collector {
-	return &Collector{}
+func NewCollector(client PAExternalAPI) *Collector {
+	return &Collector{PowerAdminClient: &client}
 }
 
 // Describe to satisfy the collector interface.
@@ -28,11 +29,9 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect metrics from ...
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
-	pc, _ := poweradmin.NewPAExternalAPIClient(config.APIKey, config.ServerURL)
-
 	for _, group := range config.Groups {
 		groupName := group.GroupName
-		metrics, err := pc.GetResources(groupName)
+		metrics, err := (*c.PowerAdminClient).GetResources(groupName)
 		if err != nil {
 			log.Printf("Failed to get metrics for group %s: %v", groupName, err)
 			ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)

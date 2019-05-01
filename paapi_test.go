@@ -1,7 +1,6 @@
-package poweradmin
+package main
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -62,7 +61,6 @@ func TestNewPAExternalAPIClient_GetMonitorInfos(t *testing.T) {
 	// create test server with handler
 	ts := httptest.NewServer(http.HandlerFunc(monitorHandler))
 	defer ts.Close()
-	fmt.Print(ts.URL)
 	monitor, _ := NewPAExternalAPIClient("1234key", ts.URL)
 	monitors, err := monitor.GetMonitorInfos("ALL")
 	assert.Nil(t, err)
@@ -94,7 +92,6 @@ func TestNewPAExternalAPIClient_GetMonitorInfos_UnmarshalError(t *testing.T) {
 	// create test server with handler
 	ts := httptest.NewServer(http.HandlerFunc(monitorHandler))
 	defer ts.Close()
-	fmt.Print(ts.URL)
 	monitor, _ := NewPAExternalAPIClient("1234key", ts.URL)
 	_, err := monitor.GetMonitorInfos("ALL")
 	assert.NotNil(t, err)

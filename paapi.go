@@ -1,4 +1,4 @@
-package poweradmin
+package main
 
 import (
 	"crypto/tls"
@@ -89,6 +89,14 @@ func (c *paTime) UnmarshalXMLAttr(attr xml.Attr) error {
 	return nil
 }
 
+// PAExternalAPI interface
+type PAExternalAPI interface {
+	GetMonitorInfos(cid string) (*MonitorInfos, error)
+	GetGroupList() (*GroupList, error)
+	GetServerList(gid string) (*ServerList, error)
+	GetResources(groupName string) (*MonitoredValues, error)
+}
+
 // PAExternalAPIClient client for PowerAdmin External API struct
 type PAExternalAPIClient struct {
 	APIKey         string
@@ -123,8 +131,8 @@ func NewPAExternalAPIClient(apiKey string, serverURL string) (*PAExternalAPIClie
 	return &pa, nil
 }
 
-func (client PAExternalAPIClient) sendRequest(req *http.Request) ([]byte, error) {
-	resp, err := client.Client.Do(req)
+func sendRequest(req *http.Request, client *http.Client) ([]byte, error) {
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Errorf("Error sending request: %v", err)
 		return nil, err
@@ -138,14 +146,14 @@ func (client PAExternalAPIClient) sendRequest(req *http.Request) ([]byte, error)
 	return data, err
 }
 
-func (client PAExternalAPIClient) getResponse(requestURL string) ([]byte, error) {
+func getResponse(requestURL string, client *http.Client) ([]byte, error) {
 	req, err := http.NewRequest("GET", requestURL, nil)
 	if err != nil {
 		log.Errorf("Error building request: %v", err)
 		return nil, err
 	}
 
-	resp, err := client.sendRequest(req)
+	resp, err := sendRequest(req, client)
 	if err != nil {
 		log.Errorf("Error querying %s: %s", req.RequestURI, err.Error())
 		return nil, err
@@ -154,8 +162,8 @@ func (client PAExternalAPIClient) getResponse(requestURL string) ([]byte, error)
 }
 
 // GetMonitorInfos returns monitorinfos for a cid
-func (client PAExternalAPIClient) GetMonitorInfos(cid string) (*MonitorInfos, error) {
-	resp, err := client.getResponse(fmt.Sprintf(client.MonitorInfoURL, cid))
+func (client *PAExternalAPIClient) GetMonitorInfos(cid string) (*MonitorInfos, error) {
+	resp, err := getResponse(fmt.Sprintf(client.MonitorInfoURL, cid), client.Client)
 	if err != nil {
 		return nil, err
 	}
@@ -169,8 +177,8 @@ func (client PAExternalAPIClient) GetMonitorInfos(cid string) (*MonitorInfos, er
 }
 
 // GetGroupList returns all groups
-func (client PAExternalAPIClient) GetGroupList() (*GroupList, error) {
-	resp, err := client.getResponse(client.GroupListURL)
+func (client *PAExternalAPIClient) GetGroupList() (*GroupList, error) {
+	resp, err := getResponse(client.GroupListURL, client.Client)
 	if err != nil {
 		return nil, err
 	}
@@ -184,8 +192,8 @@ func (client PAExternalAPIClient) GetGroupList() (*GroupList, error) {
 }
 
 // GetServerList returns all groups
-func (client PAExternalAPIClient) GetServerList(gid string) (*ServerList, error) {
-	resp, err := client.getResponse(fmt.Sprintf(client.ServerListURL, gid))
+func (client *PAExternalAPIClient) GetServerList(gid string) (*ServerList, error) {
+	resp, err := getResponse(fmt.Sprintf(client.ServerListURL, gid), client.Client)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +207,7 @@ func (client PAExternalAPIClient) GetServerList(gid string) (*ServerList, error)
 }
 
 // GetResources get the monitor values for a group name
-func (client PAExternalAPIClient) GetResources(groupName string) (*MonitoredValues, error) {
+func (client *PAExternalAPIClient) GetResources(groupName string) (*MonitoredValues, error) {
 	groups, err := client.GetGroupList()
 	if err != nil {
 		return nil, err
@@ -230,8 +238,7 @@ func (client PAExternalAPIClient) GetResources(groupName string) (*MonitoredValu
 				}
 			}
 			return &metrics, nil
-			break
 		}
 	}
-	return nil, errors.New("No group found")
+	return nil, errors.New("no group found")
 }
