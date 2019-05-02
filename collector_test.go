@@ -13,25 +13,25 @@ type MockPAExternalAPI struct {
 	mock.Mock
 }
 
-func (mock MockPAExternalAPI) GetResources(groupName string) (*MonitoredValues, error) {
+func (mock *MockPAExternalAPI) GetResources(groupName string) (*MonitoredValues, error) {
 	args := mock.Called(groupName)
 	return args.Get(0).(*MonitoredValues), args.Error(1)
 }
-func (mock MockPAExternalAPI) GetMonitorInfos(cid string) (*MonitorInfos, error) {
+func (mock *MockPAExternalAPI) GetMonitorInfos(cid string) (*MonitorInfos, error) {
 	args := mock.Called(cid)
 	return args.Get(0).(*MonitorInfos), args.Error(1)
 }
-func (mock MockPAExternalAPI) GetGroupList() (*GroupList, error) {
+func (mock *MockPAExternalAPI) GetGroupList() (*GroupList, error) {
 	args := mock.Called()
 	return args.Get(0).(*GroupList), args.Error(1)
 }
-func (mock MockPAExternalAPI) GetServerList(gid string) (*ServerList, error) {
+func (mock *MockPAExternalAPI) GetServerList(gid string) (*ServerList, error) {
 	args := mock.Called(gid)
 	return args.Get(0).(*ServerList), args.Error(1)
 }
 func TestCollector_Collect(t *testing.T) {
 	api := MockPAExternalAPI{}
-	collector := NewCollector(api)
+	collector := NewCollector(&api)
 	values := make([]MonitoredValue, 1)
 	value := MonitoredValue{
 		MonitorTitle:   "Toto",
