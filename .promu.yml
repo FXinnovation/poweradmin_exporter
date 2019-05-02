@@ -1,5 +1,5 @@
 repository:
-  path: github.com/FXInnovation/poweradmin_exporter
+  path: github.com/FXinnovation/poweradmin_exporter
 build:
   binaries:
     - name: poweradmin_exporter
