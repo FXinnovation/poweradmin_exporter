@@ -61,7 +61,7 @@ promu: ## gets promu for building
 		GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
 		$(GO) get -u github.com/prometheus/promu
 
-lint: ## lint code
+lint: golint ## lint code
 	@echo ">> linting code"
 	@! golint $(pkgs) | grep '^'
 
@@ -69,6 +69,6 @@ help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 golint: ## downloads golint
-	@go get -u golang.org/x/lint/golint | grep 'ˆ'
+	@go get -u golang.org/x/lint/golint
 
 .PHONY: all style format dependencies build test vet tarball promu
