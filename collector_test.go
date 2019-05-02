@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
@@ -41,23 +42,59 @@ func TestCollector_Collect(t *testing.T) {
 		ServerID:       "158",
 		GroupID:        "154",
 	}
-	values = append(values, value)
+	values[0] = value
 	m := MonitoredValues{
 		values,
 	}
-	api.On("GetResources").Return(m)
+	api.On("GetResources", mock.Anything).Return(&m, nil)
 	ch := make(chan prometheus.Metric)
+
+	groups := make([]GroupFilter, 1)
+	gr := GroupFilter{GroupName: "toto"}
+	groups[0] = gr
+	config = Config{
+		ServerURL: "https://hello.com",
+		APIKey:    "1234",
+		Groups:    groups,
+	}
 	go func() {
 		collector.Collect(ch)
 		close(ch)
 	}()
-
+	readOne := false
 	for m := range ch {
 		got := readMetric(m)
 		assert.Equal(t, dto.MetricType_UNTYPED, got.metricType)
-		assert.Equal(t, 1, got.value)
+		assert.Equal(t, float64(1), got.value)
+		readOne = true
 	}
+	assert.True(t, readOne)
+}
 
+func TestCollector_Collect_NoMetric(t *testing.T) {
+	api := MockPAExternalAPI{}
+	collector := NewCollector(&api)
+	api.On("GetResources", mock.Anything).Return(&MonitoredValues{}, errors.New("error in get resources"))
+	ch := make(chan prometheus.Metric)
+
+	groups := make([]GroupFilter, 1)
+	gr := GroupFilter{GroupName: "toto"}
+	groups[0] = gr
+	config = Config{
+		ServerURL: "https://hello.com",
+		APIKey:    "1234",
+		Groups:    groups,
+	}
+	go func() {
+		collector.Collect(ch)
+		close(ch)
+	}()
+	readOne := false
+	for m := range ch {
+		assert.Contains(t, m.Desc().String(), "poweradmin_error")
+		readOne = true
+	}
+	assert.True(t, readOne)
 }
 
 type labelMap map[string]string
