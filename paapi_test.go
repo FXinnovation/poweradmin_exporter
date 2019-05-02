@@ -158,7 +158,6 @@ func TestNewPAExternalAPIClient_NoApiKey(t *testing.T) {
 }
 
 func TestPAExternalAPIClient_GetResources(t *testing.T) {
-	// returns a grouplist xml
 	resourcesHandler := func(w http.ResponseWriter, r *http.Request) {
 		apiParam := r.URL.Query()["API"][0]
 		if apiParam == "GET_GROUP_LIST" {
@@ -180,8 +179,29 @@ func TestPAExternalAPIClient_GetResources(t *testing.T) {
 	metrics, err := client.GetResources("FX")
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(metrics.Values))
+	assert.Equal(t, "OK", metrics.Values[0].MonitorValue)
+}
 
-	//TODO add tests
-	// TODO add tests for no servers or no groups or no metrics
-
+func TestPAExternalAPIClient_GetResources_NoGroups(t *testing.T) {
+	resourcesHandler := func(w http.ResponseWriter, r *http.Request) {
+		apiParam := r.URL.Query()["API"][0]
+		if apiParam == "GET_GROUP_LIST" {
+			_, _ = w.Write([]byte(groupListString))
+		} else if apiParam == "GET_SERVER_LIST" {
+			_, _ = w.Write([]byte(serverListString))
+		} else if apiParam == "GET_MONITOR_INFO" {
+			if r.URL.Query()["CID"][0] == "568" {
+				_, _ = w.Write([]byte(monitorString))
+			} else {
+				_, _ = w.Write([]byte(emptyMonitorList))
+			}
+		}
+	}
+	// create test server with handler
+	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
+	defer ts.Close()
+	client, _ := NewPAExternalAPIClient("1234key", ts.URL)
+	metrics, err := client.GetResources("NOFX")
+	assert.Nil(t, metrics)
+	assert.NotNil(t, err)
 }
