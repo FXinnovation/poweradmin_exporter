@@ -68,6 +68,17 @@ Unlicensed|9
 The exporter listens on port 9575 by default, which can be changed if you need.
 [This port is the default port for this exporter.](https://github.com/prometheus/prometheus/wiki/Default-port-allocations)
 
+### Exporter configuration
+
+A config.yml file must exist and contains the following items
+```
+server: "https://paserver"
+api_key: "THE_API_KEY"
+group: ## a list of group names to monitor
+  - name: "Dev"
+  - name: "MyWonderfulMachines"
+```
+
 ## Docker image
 
 You can build a docker image using:
