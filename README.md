@@ -29,6 +29,40 @@ make test
 ./poweradmin_exporter -h
 ```
 
+## PowerAdmin integration
+### Status mapping for monitors
+PowerAdmin API uses the following values for the status of the monitors.
+
+Status|Value in GET_MONITOR_INFO call
+------|-----
+Alert|2
+Alert - Skipping Actions|10
+Alert - Green|17
+Alert - Red|18
+Alert - Suppressing|19
+Bad License|14
+Can't Run|4
+Dependency Not Met|16
+Disabled|6
+Error|3
+Error - Suppressed|21
+OK|1
+OK - Unacknowledged Alerts - Yellow|20
+OK - Unacknowledged Alerts - Red|24
+OK - Unacknowledged Alerts - Green|25
+Monitor Busy|11
+Monitor Maintenance Mode|13
+Satellite Disconnected|23
+Scheduled|7
+Server Disabled|22
+Server Maintenance Mode|26
+Startup Pause|8
+Training|12
+Unlicensed|9
+ 	
+	 
+
+
 ## Deployment
 
 The exporter listens on port 9575 by default, which can be changed if you need.
