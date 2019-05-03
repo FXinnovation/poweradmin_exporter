@@ -27,7 +27,7 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- prometheus.NewDesc("dummy", "dummy", nil, nil)
 }
 
-// Collect metrics from ...
+// Collect metrics from PowerAdmin external API
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	for _, group := range config.Groups {
 		groupName := group.GroupName
