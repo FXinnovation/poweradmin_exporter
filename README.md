@@ -74,6 +74,7 @@ A config.yml file must exist and contains the following items
 ```
 server: "https://paserver"
 api_key: "THE_API_KEY"
+skip_tls_verify: false
 group: ## a list of group names to monitor
   - name: "Dev"
   - name: "MyWonderfulMachines"

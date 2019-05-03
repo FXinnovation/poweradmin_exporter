@@ -107,9 +107,13 @@ type PAExternalAPIClient struct {
 	Client         *http.Client
 }
 
-func createPAClient(apiKey string, serverURL string) PAExternalAPIClient {
-	transCfg := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // ignore expired SSL certificates
+func createPAClient(apiKey string, serverURL string, skipTSLVerify bool) PAExternalAPIClient {
+
+	transCfg := &http.Transport{}
+	if skipTSLVerify {
+		transCfg = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // ignore expired SSL certificates
+		}
 	}
 	return PAExternalAPIClient{
 		APIKey:    apiKey,
@@ -119,11 +123,12 @@ func createPAClient(apiKey string, serverURL string) PAExternalAPIClient {
 }
 
 // NewPAExternalAPIClient creates a client for monitor info calls
-func NewPAExternalAPIClient(apiKey string, serverURL string) (*PAExternalAPIClient, error) {
+func NewPAExternalAPIClient(apiKey string, serverURL string, skipTLSVerify bool) (*PAExternalAPIClient, error) {
 	if apiKey == "" {
 		return nil, errors.New("API Key cannot be empty")
 	}
-	pa := createPAClient(apiKey, serverURL)
+
+	pa := createPAClient(apiKey, serverURL, skipTLSVerify)
 	paURL := fmt.Sprintf(paServerString, serverURL, apiKey)
 	pa.MonitorInfoURL = paURL + monitorInfoSuffix
 	pa.GroupListURL = paURL + groupListSuffix

@@ -23,9 +23,10 @@ var (
 
 // Config of the exporter
 type Config struct {
-	ServerURL string        `yaml:"server"`
-	APIKey    string        `yaml:"api_key"`
-	Groups    []GroupFilter `yaml:"group"`
+	ServerURL     string        `yaml:"server"`
+	APIKey        string        `yaml:"api_key"`
+	Groups        []GroupFilter `yaml:"group"`
+	SkipTLSVerify bool          `yaml:"skip_tls_verify"`
 }
 
 // GroupFilter group selection
@@ -46,7 +47,11 @@ func main() {
 	log.Println("Build context", version.BuildContext())
 
 	config = loadConfig(*configFile)
-	powerAdminClient, err := NewPAExternalAPIClient(config.APIKey, config.ServerURL)
+	skipTLS := false
+	if config.SkipTLSVerify {
+		skipTLS = true
+	}
+	powerAdminClient, err := NewPAExternalAPIClient(config.APIKey, config.ServerURL, skipTLS)
 	if err != nil {
 		log.Fatal(err)
 	}

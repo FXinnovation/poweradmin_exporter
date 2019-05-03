@@ -44,7 +44,7 @@ const (
 )
 
 func TestNewPAExternalAPIClient(t *testing.T) {
-	monitor, _ := NewPAExternalAPIClient("1234key", "https://serverpa")
+	monitor, _ := NewPAExternalAPIClient("1234key", "https://serverpa", false)
 	assert.NotNil(t, monitor)
 	assert.NotNil(t, monitor.MonitorInfoURL)
 	assert.Contains(t, monitor.MonitorInfoURL, "GET_MONITOR_INFO")
@@ -61,7 +61,7 @@ func TestNewPAExternalAPIClient_GetMonitorInfos(t *testing.T) {
 	// create test server with handler
 	ts := httptest.NewServer(http.HandlerFunc(monitorHandler))
 	defer ts.Close()
-	monitor, _ := NewPAExternalAPIClient("1234key", ts.URL)
+	monitor, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	monitors, err := monitor.GetMonitorInfos("ALL")
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(monitors.Infos))
@@ -72,13 +72,13 @@ func TestNewPAExternalAPIClient_GetMonitorInfos(t *testing.T) {
 }
 
 func TestNewPAExternalAPIClient_GetMonitorInfos_NoResponse(t *testing.T) {
-	monitor, _ := NewPAExternalAPIClient("1234key", "https://nourl.com")
+	monitor, _ := NewPAExternalAPIClient("1234key", "https://nourl.com", false)
 	_, err := monitor.GetMonitorInfos("ALL")
 	assert.NotNil(t, err)
 }
 
 func TestNewPAExternalAPIClient_GetMonitorInfos_BadUrl(t *testing.T) {
-	monitor, _ := NewPAExternalAPIClient("1234key", "::?s::s&t::::oto\x20--notanurl.com")
+	monitor, _ := NewPAExternalAPIClient("1234key", "::?s::s&t::::oto\x20--notanurl.com", false)
 	_, err := monitor.GetMonitorInfos("ALL")
 	assert.NotNil(t, err)
 }
@@ -92,7 +92,7 @@ func TestNewPAExternalAPIClient_GetMonitorInfos_UnmarshalError(t *testing.T) {
 	// create test server with handler
 	ts := httptest.NewServer(http.HandlerFunc(monitorHandler))
 	defer ts.Close()
-	monitor, _ := NewPAExternalAPIClient("1234key", ts.URL)
+	monitor, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	_, err := monitor.GetMonitorInfos("ALL")
 	assert.NotNil(t, err)
 }
@@ -106,7 +106,7 @@ func TestNewPAExternalAPIClient_GetMonitorInfos_TimeParsingError(t *testing.T) {
 	// create test server with handler
 	ts := httptest.NewServer(http.HandlerFunc(monitorHandler))
 	defer ts.Close()
-	monitor, _ := NewPAExternalAPIClient("1234key", ts.URL)
+	monitor, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	_, err := monitor.GetMonitorInfos("ALL")
 	assert.NotNil(t, err)
 }
@@ -120,7 +120,7 @@ func TestNewPAExternalAPIClient_GetGroupList(t *testing.T) {
 	// create test server with handler
 	ts := httptest.NewServer(http.HandlerFunc(groupHandler))
 	defer ts.Close()
-	client, _ := NewPAExternalAPIClient("1234key", ts.URL)
+	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	groups, err := client.GetGroupList()
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(groups.Groups))
@@ -139,7 +139,7 @@ func TestNewPAExternalAPIClient_GetServerList(t *testing.T) {
 	// create test server with handler
 	ts := httptest.NewServer(http.HandlerFunc(serverHandler))
 	defer ts.Close()
-	client, _ := NewPAExternalAPIClient("1234key", ts.URL)
+	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	servers, err := client.GetServerList("193")
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(servers.Servers))
@@ -152,7 +152,7 @@ func TestNewPAExternalAPIClient_GetServerList(t *testing.T) {
 }
 
 func TestNewPAExternalAPIClient_NoApiKey(t *testing.T) {
-	client, err := NewPAExternalAPIClient("", "server")
+	client, err := NewPAExternalAPIClient("", "server", false)
 	assert.Nil(t, client)
 	assert.NotNil(t, err)
 }
@@ -175,7 +175,7 @@ func TestPAExternalAPIClient_GetResources(t *testing.T) {
 	// create test server with handler
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
-	client, _ := NewPAExternalAPIClient("1234key", ts.URL)
+	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	metrics, err := client.GetResources("FX")
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(metrics.Values))
@@ -200,7 +200,7 @@ func TestPAExternalAPIClient_GetResources_NoGroups(t *testing.T) {
 	// create test server with handler
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
-	client, _ := NewPAExternalAPIClient("1234key", ts.URL)
+	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	metrics, err := client.GetResources("NOFX")
 	assert.Nil(t, metrics)
 	assert.NotNil(t, err)
@@ -224,7 +224,7 @@ func TestPAExternalAPIClient_GetResources_NoServers(t *testing.T) {
 	// create test server with handler
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
-	client, _ := NewPAExternalAPIClient("1234key", ts.URL)
+	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	metrics, err := client.GetResources("FX")
 	assert.NotNil(t, metrics)
 	assert.Nil(t, err)
