@@ -14,12 +14,12 @@ var (
 
 // Collector generic collector type
 type Collector struct {
-	PowerAdminClient *PAExternalAPI
+	PowerAdminClient PAExternalAPI
 }
 
 // NewCollector returns the collector
 func NewCollector(client PAExternalAPI) *Collector {
-	return &Collector{PowerAdminClient: &client}
+	return &Collector{PowerAdminClient: client}
 }
 
 // Describe to satisfy the collector interface.
@@ -31,7 +31,7 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	for _, group := range config.Groups {
 		groupName := group.GroupName
-		metrics, err := (*c.PowerAdminClient).GetResources(groupName)
+		metrics, err := (c.PowerAdminClient).GetResources(groupName)
 		if err != nil {
 			log.Printf("Failed to get metrics for group %s: %v", groupName, err)
 			ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
