@@ -9,7 +9,7 @@ import (
 
 var (
 	powerAdminErrorDesc = prometheus.NewDesc("poweradmin_error", "Error collecting metrics", nil, nil)
-	invalidMetricChars  = regexp.MustCompile("[^a-zA-Z0-9_:]")
+	invalidMetricChars  = regexp.MustCompile("[^a-zA-Z0-9_: ]")
 )
 
 // Collector generic collector type
@@ -38,7 +38,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			return
 		}
 		for _, metric := range metrics.Values {
-			metricName := getMetricName(metric.MonitorTitle)
+			metricName := getFormattedMetricName(metric.MonitorTitle)
 			log.Printf("Metric sent %s:%s", metricName, metric)
 			ch <- prometheus.MustNewConstMetric(
 				prometheus.NewDesc(metricName, metricName, nil, nil),
@@ -49,11 +49,11 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
-func getMetricName(name string) string {
+func getFormattedMetricName(name string) string {
 	// Ensure metric names conform to Prometheus metric name conventions
-	metricName := strings.Replace(name, " ", "_", -1)
+	metricName := strings.ReplaceAll(name, " ", "_")
 	metricName = strings.ToLower(metricName + "_status")
-	metricName = strings.Replace(metricName, "/", "_per_", -1)
+	metricName = strings.ReplaceAll(metricName, "/", "_per_")
 	metricName = invalidMetricChars.ReplaceAllString(metricName, "_")
 	return metricName
 }

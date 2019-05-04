@@ -107,10 +107,10 @@ type PAExternalAPIClient struct {
 	Client         *http.Client
 }
 
-func createPAClient(apiKey string, serverURL string, skipTSLVerify bool) PAExternalAPIClient {
+func createPAClient(apiKey string, serverURL string, skipTLSVerify bool) PAExternalAPIClient {
 
 	transCfg := &http.Transport{}
-	if skipTSLVerify {
+	if skipTLSVerify {
 		transCfg = &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // ignore expired SSL certificates
 		}
