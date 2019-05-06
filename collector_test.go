@@ -14,8 +14,8 @@ type MockPAExternalAPI struct {
 	mock.Mock
 }
 
-func (mock *MockPAExternalAPI) GetResources(groupName string) (*MonitoredValues, error) {
-	args := mock.Called(groupName)
+func (mock *MockPAExternalAPI) GetResources(groupFilters []GroupFilter) (*MonitoredValues, error) {
+	args := mock.Called(groupFilters)
 	return args.Get(0).(*MonitoredValues), args.Error(1)
 }
 func (mock *MockPAExternalAPI) GetMonitorInfos(cid string) (*MonitorInfos, error) {

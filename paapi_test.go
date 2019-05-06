@@ -176,7 +176,7 @@ func TestPAExternalAPIClient_GetResources(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
-	metrics, err := client.GetResources("FX")
+	metrics, err := client.GetResources([]GroupFilter{{GroupName: "FX"}})
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(metrics.Values))
 	assert.Equal(t, "OK", metrics.Values[0].MonitorValue)
@@ -201,9 +201,9 @@ func TestPAExternalAPIClient_GetResources_NoGroups(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
-	metrics, err := client.GetResources("NOFX")
-	assert.Nil(t, metrics)
-	assert.NotNil(t, err)
+	metrics, err := client.GetResources([]GroupFilter{{GroupName:"NOFX"}})
+	assert.Equal(t, 0, len(metrics.Values))
+	assert.Nil(t, err)
 }
 
 func TestPAExternalAPIClient_GetResources_NoServers(t *testing.T) {
@@ -225,7 +225,7 @@ func TestPAExternalAPIClient_GetResources_NoServers(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
-	metrics, err := client.GetResources("FX")
+	metrics, err := client.GetResources([]GroupFilter{{GroupName:"FX"}})
 	assert.NotNil(t, metrics)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(metrics.Values))

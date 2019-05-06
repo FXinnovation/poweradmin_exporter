@@ -29,24 +29,22 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect metrics from PowerAdmin external API
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
-	for _, group := range config.Groups {
-		groupName := group.GroupName
-		metrics, err := (c.PowerAdminClient).GetResources(groupName)
-		if err != nil {
-			log.Printf("Failed to get metrics for group %s: %v", groupName, err)
-			ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
-			return
-		}
-		for _, metric := range metrics.Values {
-			metricName := getFormattedMetricName(metric.MonitorTitle)
-			log.Printf("Metric sent %s:%s", metricName, metric)
-			ch <- prometheus.MustNewConstMetric(
-				prometheus.NewDesc(metricName, metricName, nil, nil),
-				prometheus.UntypedValue,
-				getFloatValue(metric.MonitorValue),
-			)
-		}
+	metrics, err := c.PowerAdminClient.GetResources(config.Groups)
+	if err != nil {
+		log.Printf("Failed to get metrics for groups: %v", err)
+		ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
+		return
 	}
+	for _, metric := range metrics.Values {
+		metricName := getFormattedMetricName(metric.MonitorTitle)
+		log.Printf("Metric sent %s:%s", metricName, metric)
+		ch <- prometheus.MustNewConstMetric(
+			prometheus.NewDesc(metricName, metricName, nil, nil),
+			prometheus.UntypedValue,
+			getFloatValue(metric.MonitorValue),
+		)
+	}
+
 }
 
 func getFormattedMetricName(name string) string {

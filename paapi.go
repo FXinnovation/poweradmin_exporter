@@ -94,7 +94,7 @@ type PAExternalAPI interface {
 	GetMonitorInfos(cid string) (*MonitorInfos, error)
 	GetGroupList() (*GroupList, error)
 	GetServerList(gid string) (*ServerList, error)
-	GetResources(groupName string) (*MonitoredValues, error)
+	GetResources(groupFilters []GroupFilter) (*MonitoredValues, error)
 }
 
 // PAExternalAPIClient client for PowerAdmin External API struct
@@ -212,19 +212,27 @@ func (client *PAExternalAPIClient) GetServerList(gid string) (*ServerList, error
 }
 
 // GetResources get the monitor values for a group name
-func (client *PAExternalAPIClient) GetResources(groupName string) (*MonitoredValues, error) {
+func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*MonitoredValues, error) {
 	groups, err := client.GetGroupList()
 	if err != nil {
 		return nil, err
 	}
+	groupSet := make(map[string]Group, len(groups.Groups))
+
+	// populate once a set so that we don't search the groupNames slice several times for contains
 	for _, group := range groups.Groups {
-		if group.Name == groupName {
+		groupSet[group.Name] = group
+	}
+	metrics := MonitoredValues{}
+	metrics.Values = make([]MonitoredValue, 0)
+	for _, filter := range groupFilters {
+		group, groupExists := groupSet[filter.GroupName]
+		if groupExists {
 			servers, err := client.GetServerList(group.ID)
 			if err != nil {
 				return nil, err
 			}
-			metrics := MonitoredValues{}
-			metrics.Values = make([]MonitoredValue, 0)
+
 			for _, server := range servers.Servers {
 				values, err := client.GetMonitorInfos(server.ID)
 				if err != nil {
@@ -242,8 +250,9 @@ func (client *PAExternalAPIClient) GetResources(groupName string) (*MonitoredVal
 					metrics.Values = append(metrics.Values, newMetric)
 				}
 			}
-			return &metrics, nil
+		} else {
+			log.Debugf("group named %s not found", filter)
 		}
 	}
-	return nil, errors.New("no group found")
+	return &metrics, nil
 }
