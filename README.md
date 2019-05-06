@@ -60,6 +60,8 @@ Startup Pause|8
 Training|12
 Unlicensed|9
  	
+
+The _status_mapping.yml_ file contains the values as float64 returned in the metrics for each string status returned by PowerAdmin. You can also specify a default value.
 	 
 
 
@@ -79,6 +81,7 @@ group: ## a list of group names to monitor
   - name: "Dev"
   - name: "MyWonderfulMachines"
 ```
+The _skip_tls_verify_ option gives you the possibility to skip the certificate checking for self signed certs for example.
 
 ## Docker image
 
