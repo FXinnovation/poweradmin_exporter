@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"log"
 	"regexp"
 	"strings"
@@ -10,11 +12,16 @@ import (
 var (
 	powerAdminErrorDesc = prometheus.NewDesc("poweradmin_error", "Error collecting metrics", nil, nil)
 	invalidMetricChars  = regexp.MustCompile("[^a-zA-Z0-9_: ]")
+	statusConfig        StatusConfig
 )
 
 // Collector generic collector type
 type Collector struct {
 	PowerAdminClient PAExternalAPI
+}
+
+func init() {
+	statusConfig = loadStatuses("status_mapping.yml")
 }
 
 // NewCollector returns the collector
@@ -57,8 +64,27 @@ func getFormattedMetricName(name string) string {
 }
 
 func getFloatValue(value string) float64 {
-	if strings.ToLower(value) == "ok" {
-		return 1
+	if st, stExist := statusConfig.Statuses[strings.ToLower(value)]; stExist {
+		return st
 	}
-	return 0
+	return statusConfig.Default
+}
+
+// StatusConfig configure the status values to be sent
+type StatusConfig struct {
+	Statuses map[string]float64 `yaml:"values"`
+	Default  float64            `yaml:"default"`
+}
+
+func loadStatuses(filename string) StatusConfig {
+	thisConfig := StatusConfig{}
+	statusData, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Fatal("Unable to read status config file")
+	}
+	yamlErr := yaml.Unmarshal([]byte(statusData), &thisConfig)
+	if yamlErr != nil {
+		log.Fatal("Problem unmarshalling status config file")
+	}
+	return thisConfig
 }

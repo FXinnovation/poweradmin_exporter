@@ -123,3 +123,9 @@ func readMetric(m prometheus.Metric) MetricResult {
 	}
 	panic("Unsupported metric type")
 }
+
+func TestLoadConfig(t *testing.T) {
+	s := loadStatuses("status_mapping.yml")
+	assert.Equal(t, float64(1), s.Statuses["ok"])
+	assert.Equal(t, float64(0), s.Default)
+}
