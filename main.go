@@ -31,7 +31,8 @@ type Config struct {
 
 // GroupFilter group selection
 type GroupFilter struct {
-	GroupName string `yaml:"name"`
+	GroupName string   `yaml:"name"`
+	Servers   []string `yaml:"servers"`
 }
 
 func init() {
