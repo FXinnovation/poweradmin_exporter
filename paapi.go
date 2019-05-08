@@ -232,7 +232,7 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 			if err != nil {
 				return nil, err
 			}
-			filteredServers := filterWantedServers(servers.Servers, filter.Servers)
+			filteredServers := filterServers(servers.Servers, filter.Servers)
 			for _, server := range filteredServers {
 				values, err := client.GetMonitorInfos(server.ID)
 				if err != nil {
@@ -257,7 +257,7 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 	return &metrics, nil
 }
 
-func filterWantedServers(servers []Server, names []string) []Server {
+func filterServers(servers []Server, names []string) []Server {
 	if len(names) == 0 { // if no server names in filter, then it's like no filter
 		return servers
 	}
