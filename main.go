@@ -31,7 +31,7 @@ type Config struct {
 
 // GroupFilter group selection
 type GroupFilter struct {
-	GroupName string   `yaml:"name"`
+	GroupPath string   `yaml:"path"`
 	Servers   []string `yaml:"servers"`
 }
 

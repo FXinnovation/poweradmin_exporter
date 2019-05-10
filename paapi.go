@@ -160,7 +160,7 @@ func getResponse(requestURL string, client *http.Client) ([]byte, error) {
 		log.Errorf("Error building request: %v", err)
 		return nil, err
 	}
-
+	log.Warnf("Sending request: %s", requestURL)
 	resp, err := sendRequest(req, client)
 	if err != nil {
 		log.Errorf("Error querying %s: %s", req.RequestURI, err.Error())
@@ -224,20 +224,23 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 
 	// populate once a set so that we don't search the groupNames slice several times for contains
 	for _, group := range groups.Groups {
-		groupSet[group.Name] = group
+		groupSet[group.Path] = group
 	}
 	metrics := MonitoredValues{}
 	metrics.Values = make([]MonitoredValue, 0)
 	for _, filter := range groupFilters {
-		group, groupExists := groupSet[filter.GroupName]
+		group, groupExists := groupSet[filter.GroupPath]
 		if groupExists {
 			servers, err := client.GetServerList(group.ID)
 			if err != nil {
 				return nil, err
 			}
+			log.Warnf("Number of servers to parse: %d", len(servers.Servers))
 			filteredServers := filterServers(servers.Servers, filter.Servers)
+			log.Warnf("Number of servers to go: %d", len(filteredServers))
 			for _, server := range filteredServers {
 				values, err := client.GetMonitorInfos(server.ID)
+				log.Warnf("Number of infos: %d", len(values.Infos))
 				if err != nil {
 					return nil, err
 				}
@@ -256,9 +259,10 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 				}
 			}
 		} else {
-			log.Debugf("group named %s not found", filter)
+			log.Warnf("group named %s not found", filter)
 		}
 	}
+	log.Warnf("number of motrics returned: %d", len(metrics.Values))
 	return &metrics, nil
 }
 

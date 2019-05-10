@@ -59,7 +59,7 @@ func TestCollector_Collect(t *testing.T) {
 	ch := make(chan prometheus.Metric)
 
 	groups := make([]GroupFilter, 1)
-	gr := GroupFilter{GroupName: "toto"}
+	gr := GroupFilter{GroupPath: "toto"}
 	groups[0] = gr
 	config = Config{
 		ServerURL: "https://hello.com",
@@ -101,7 +101,7 @@ func TestCollector_Collect_NoMetric(t *testing.T) {
 	ch := make(chan prometheus.Metric)
 
 	groups := make([]GroupFilter, 1)
-	gr := GroupFilter{GroupName: "toto"}
+	gr := GroupFilter{GroupPath: "toto"}
 	groups[0] = gr
 	config = Config{
 		ServerURL: "https://hello.com",

@@ -255,7 +255,7 @@ func TestPAExternalAPIClient_GetResources(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
-	metrics, err := client.GetResources([]GroupFilter{{GroupName: "FX"}})
+	metrics, err := client.GetResources([]GroupFilter{{GroupPath: "Servers/Devices^Live^FX"}})
 	if err != nil {
 		t.Errorf("Error should be nil: got %v", err)
 	}
@@ -286,7 +286,7 @@ func TestPAExternalAPIClient_GetResources_NoGroups(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
-	metrics, err := client.GetResources([]GroupFilter{{GroupName: "NOFX"}})
+	metrics, err := client.GetResources([]GroupFilter{{GroupPath: "NOFX"}})
 	if len(metrics.Values) != 0 {
 		t.Errorf("Wrong size for metrics.Values: got %v, want %v", len(metrics.Values), 0)
 	}
@@ -314,7 +314,7 @@ func TestPAExternalAPIClient_GetResources_NoServers(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
-	metrics, err := client.GetResources([]GroupFilter{{GroupName: "FX"}})
+	metrics, err := client.GetResources([]GroupFilter{{GroupPath: "Servers/Devices^Live^FX"}})
 	if metrics == nil {
 		t.Errorf("Metrics shouldn't be nil: got %v", metrics)
 	}
@@ -346,7 +346,7 @@ func TestPAExternalAPIClient_GetResources_FilterServer(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
-	metrics, err := client.GetResources([]GroupFilter{{GroupName: "FX", Servers: []string{"FXH1"}}})
+	metrics, err := client.GetResources([]GroupFilter{{GroupPath: "Servers/Devices^Live^FX", Servers: []string{"FXH1"}}})
 	if len(metrics.Values) != 1 {
 		t.Errorf("Wrong size: got %v, want %v", len(metrics.Values), 1)
 	}
@@ -354,7 +354,7 @@ func TestPAExternalAPIClient_GetResources_FilterServer(t *testing.T) {
 		t.Errorf("Error should be nil: got %v", err)
 	}
 
-	metrics, err = client.GetResources([]GroupFilter{{GroupName: "FX", Servers: []string{"FXH2"}}})
+	metrics, err = client.GetResources([]GroupFilter{{GroupPath: "Servers/Devices^Live^FX", Servers: []string{"FXH2"}}})
 	if len(metrics.Values) != 0 {
 		t.Errorf("Wrong size: got %v, want %v", len(metrics.Values), 0)
 	}
