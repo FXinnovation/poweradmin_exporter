@@ -45,8 +45,11 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	for _, metric := range metrics.Values {
 		metricName := getFormattedMetricName(metric.MonitorTitle)
 		log.Printf("Metric sent %s:%s", metricName, metric)
+		labels := make(map[string]string, 2)
+		labels["group"] = metric.GroupName
+		labels["server"] = metric.ServerName
 		ch <- prometheus.MustNewConstMetric(
-			prometheus.NewDesc(metricName, metricName, nil, nil),
+			prometheus.NewDesc(metricName, metricName, nil, labels),
 			prometheus.UntypedValue,
 			getFloatValue(metric.MonitorValue),
 		)

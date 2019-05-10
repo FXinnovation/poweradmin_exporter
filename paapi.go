@@ -71,7 +71,9 @@ type MonitoredValue struct {
 	MonitorStatus  string
 	MonitorLastRun time.Time
 	ServerID       string
+	ServerName     string
 	GroupID        string
+	GroupName      string
 }
 
 type paTime struct {
@@ -83,7 +85,8 @@ func (c *paTime) UnmarshalXMLAttr(attr xml.Attr) error {
 
 	parse, err := time.Parse(shortForm, attr.Value)
 	if err != nil {
-		return err
+		log.Errorf("Error parsing %s", attr.Value)
+		parse = time.Now()
 	}
 	*c = paTime{parse}
 	return nil
@@ -241,7 +244,9 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 				for _, metric := range values.Infos {
 					newMetric := MonitoredValue{
 						GroupID:        group.ID,
+						GroupName:      group.Name,
 						ServerID:       server.ID,
+						ServerName:     server.Name,
 						MonitorValue:   metric.Status,
 						MonitorStatus:  metric.Status,
 						MonitorTitle:   metric.Title,
