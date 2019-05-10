@@ -33,7 +33,7 @@ func (mock *MockPAExternalAPI) GetServerList(gid string) (*ServerList, error) {
 func TestCollector_Collect(t *testing.T) {
 	api := MockPAExternalAPI{}
 	collector := NewCollector(&api)
-	values := make([]MonitoredValue, 1)
+	values := make([]MonitoredValue, 2)
 	value := MonitoredValue{
 		MonitorTitle:   "Toto",
 		MonitorValue:   "OK",
@@ -42,7 +42,16 @@ func TestCollector_Collect(t *testing.T) {
 		ServerID:       "158",
 		GroupID:        "154",
 	}
+	value2 := MonitoredValue{
+		MonitorTitle:   "Albert",
+		MonitorValue:   "Not OK",
+		MonitorLastRun: time.Now(),
+		MonitorStatus:  "Not OK",
+		ServerID:       "158",
+		GroupID:        "154",
+	}
 	values[0] = value
+	values[1] = value2
 	m := MonitoredValues{
 		values,
 	}
@@ -65,7 +74,11 @@ func TestCollector_Collect(t *testing.T) {
 	for m := range ch {
 		got := readMetric(m)
 		assert.Equal(t, dto.MetricType_UNTYPED, got.metricType)
-		assert.Equal(t, float64(1), got.value)
+		if readOne {
+			assert.Equal(t, float64(0), got.value)
+		} else {
+			assert.Equal(t, float64(1), got.value)
+		}
 		readOne = true
 	}
 	assert.True(t, readOne)

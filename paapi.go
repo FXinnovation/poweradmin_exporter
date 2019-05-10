@@ -235,8 +235,8 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 			if err != nil {
 				return nil, err
 			}
-
-			for _, server := range servers.Servers {
+			filteredServers := filterServers(servers.Servers, filter.Servers)
+			for _, server := range filteredServers {
 				values, err := client.GetMonitorInfos(server.ID)
 				if err != nil {
 					return nil, err
@@ -260,4 +260,22 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 		}
 	}
 	return &metrics, nil
+}
+
+func filterServers(servers []Server, names []string) []Server {
+	if len(names) == 0 { // if no server names in filter, then it's like no filter
+		return servers
+	}
+	namesSet := make(map[string]struct{}, len(names))
+	for _, name := range names {
+		namesSet[name] = struct{}{}
+	}
+	newServers := make([]Server, 0)
+	for _, server := range servers {
+		if _, exists := namesSet[server.Name]; exists {
+			newServers = append(newServers, server)
+		}
+	}
+	return newServers
+
 }
