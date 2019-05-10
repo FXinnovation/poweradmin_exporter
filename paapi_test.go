@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -45,11 +45,21 @@ const (
 
 func TestNewPAExternalAPIClient(t *testing.T) {
 	monitor, _ := NewPAExternalAPIClient("1234key", "https://serverpa", false)
-	assert.NotNil(t, monitor)
-	assert.NotNil(t, monitor.MonitorInfoURL)
-	assert.Contains(t, monitor.MonitorInfoURL, "GET_MONITOR_INFO")
-	assert.NotNil(t, monitor.Client)
-	assert.Equal(t, reflect.TypeOf(&http.Client{}), reflect.TypeOf(monitor.Client))
+	if monitor == nil {
+		t.Errorf("Monitor shouldn't be nil: got %v", monitor)
+	}
+	if len(monitor.MonitorInfoURL) == 0 {
+		t.Errorf("MonitorInfoURL shouldn't be empty: got %v", monitor.MonitorInfoURL)
+	}
+	if !strings.Contains(monitor.MonitorInfoURL, "GET_MONITOR_INFO") {
+		t.Errorf("MonitorInfoURL doesn't contain value %v: got %v", "GET_MONITOR_INFO", monitor.MonitorInfoURL)
+	}
+	if monitor.Client == nil {
+		t.Errorf("Monitor.Client shouldn't be nil: got %v", monitor.Client)
+	}
+	if reflect.TypeOf(&http.Client{}) != reflect.TypeOf(monitor.Client) {
+		t.Errorf("Monitor.Client should be %v", reflect.TypeOf(&http.Client{}))
+	}
 }
 
 func TestNewPAExternalAPIClient_GetMonitorInfos(t *testing.T) {
@@ -63,24 +73,44 @@ func TestNewPAExternalAPIClient_GetMonitorInfos(t *testing.T) {
 	defer ts.Close()
 	monitor, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	monitors, err := monitor.GetMonitorInfos("ALL")
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(monitors.Infos))
-	assert.Equal(t, "8937", monitors.Infos[0].ID)
-	assert.Equal(t, "OK", monitors.Infos[0].Status)
-	assert.Equal(t, "Ping FXMACHINE1", monitors.Infos[0].Title)
-	assert.Equal(t, 2019, monitors.Infos[0].LastRun.Year())
+	if err != nil {
+		t.Errorf("Error should be nil: got %v", err)
+	}
+	if len(monitors.Infos) != 1 {
+		t.Errorf("Wrong size for monitors.Infos: got %v, want %v", len(monitors.Infos), 1)
+	}
+
+	if monitors.Infos[0].ID != "8937" {
+		t.Errorf("Wrong value for monitors.Infos[0].ID: got %v, want %v", monitors.Infos[0].ID, "8937")
+	}
+
+	if monitors.Infos[0].Status != "OK" {
+		t.Errorf("Wrong value for monitors.Infos[0].Status: got %v, want %v", monitors.Infos[0].Status, "OK")
+	}
+
+	if monitors.Infos[0].Title != "Ping FXMACHINE1" {
+		t.Errorf("Wrong value for monitors.Infos[0].Title: got %v, want %v", monitors.Infos[0].Title, "Ping FXMACHINE1")
+	}
+
+	if monitors.Infos[0].LastRun.Year() != 2019 {
+		t.Errorf("Wrong value for monitors.Infos[0].LastRun.Year(): got %v, want %v", monitors.Infos[0].LastRun.Year(), 2019)
+	}
 }
 
 func TestNewPAExternalAPIClient_GetMonitorInfos_NoResponse(t *testing.T) {
 	monitor, _ := NewPAExternalAPIClient("1234key", "https://nourl.com", false)
 	_, err := monitor.GetMonitorInfos("ALL")
-	assert.NotNil(t, err)
+	if err == nil {
+		t.Errorf("Error shouldn't be nil: got %v", err)
+	}
 }
 
 func TestNewPAExternalAPIClient_GetMonitorInfos_BadUrl(t *testing.T) {
 	monitor, _ := NewPAExternalAPIClient("1234key", "::?s::s&t::::oto\x20--notanurl.com", false)
 	_, err := monitor.GetMonitorInfos("ALL")
-	assert.NotNil(t, err)
+	if err == nil {
+		t.Errorf("Error shouldn't be nil: got %v", err)
+	}
 }
 
 func TestNewPAExternalAPIClient_GetMonitorInfos_UnmarshalError(t *testing.T) {
@@ -94,7 +124,9 @@ func TestNewPAExternalAPIClient_GetMonitorInfos_UnmarshalError(t *testing.T) {
 	defer ts.Close()
 	monitor, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	_, err := monitor.GetMonitorInfos("ALL")
-	assert.NotNil(t, err)
+	if err == nil {
+		t.Errorf("Error shouldn't be nil: got %v", err)
+	}
 }
 
 func TestNewPAExternalAPIClient_GetMonitorInfos_TimeParsingError(t *testing.T) {
@@ -108,7 +140,9 @@ func TestNewPAExternalAPIClient_GetMonitorInfos_TimeParsingError(t *testing.T) {
 	defer ts.Close()
 	monitor, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	_, err := monitor.GetMonitorInfos("ALL")
-	assert.NotNil(t, err)
+	if err == nil {
+		t.Errorf("Error shouldn't be nil: got %v", err)
+	}
 }
 
 func TestNewPAExternalAPIClient_GetGroupList(t *testing.T) {
@@ -122,12 +156,29 @@ func TestNewPAExternalAPIClient_GetGroupList(t *testing.T) {
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	groups, err := client.GetGroupList()
-	assert.Nil(t, err)
-	assert.Equal(t, 3, len(groups.Groups))
-	assert.Equal(t, "2", groups.Groups[1].ID)
-	assert.Equal(t, "Central", groups.Groups[1].Name)
-	assert.Equal(t, "Servers/Devices^Live^Central", groups.Groups[1].Path)
-	assert.Equal(t, "647", groups.Groups[1].ParentID)
+	if err != nil {
+		t.Errorf("Error should be nil: got %v", err)
+	}
+
+	if len(groups.Groups) != 3 {
+		t.Errorf("Wrong size for groups.Groups: got %v, want %v", len(groups.Groups), 3)
+	}
+
+	if groups.Groups[1].ID != "2" {
+		t.Errorf("Wrong value for groups.Groups[1].ID: got %v, want %v", groups.Groups[1].ID, "2")
+	}
+
+	if groups.Groups[1].Name != "Central" {
+		t.Errorf("Wrong value for groups.Groups[1].Name: got %v, want %v", groups.Groups[1].Name, "Central")
+	}
+
+	if groups.Groups[1].Path != "Servers/Devices^Live^Central" {
+		t.Errorf("Wrong value for groups.Groups[1].Path: got %v, want %v", groups.Groups[1].Path, "Servers/Devices^Live^Central")
+	}
+
+	if groups.Groups[1].ParentID != "647" {
+		t.Errorf("Wrong value for groups.Groups[1].ParentID: got %v, want %v", groups.Groups[1].ParentID, "647")
+	}
 }
 
 func TestNewPAExternalAPIClient_GetServerList(t *testing.T) {
@@ -141,20 +192,48 @@ func TestNewPAExternalAPIClient_GetServerList(t *testing.T) {
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	servers, err := client.GetServerList("193")
-	assert.Nil(t, err)
-	assert.Equal(t, 3, len(servers.Servers))
-	assert.Equal(t, "568", servers.Servers[0].ID)
-	assert.Equal(t, "FXH1", servers.Servers[0].Name)
-	assert.Equal(t, "Servers/Devices^Live^FX Hosting^Physical^FX^Prod", servers.Servers[0].Group)
-	assert.Equal(t, "193", servers.Servers[0].GroupID)
-	assert.Equal(t, "ok", servers.Servers[0].Status)
-	assert.Equal(t, "FXH1", servers.Servers[0].Alias)
+	if err != nil {
+		t.Errorf("Error should be nil: got %v", err)
+	}
+
+	if len(servers.Servers) != 3 {
+		t.Errorf("Wrong size for servers.Servers: got %v, want %v", len(servers.Servers), 3)
+	}
+
+	if servers.Servers[0].ID != "568" {
+		t.Errorf("Wrong value for servers.Servers[0].ID: got %v, want %v",servers.Servers[0].ID, "568")
+	}
+
+	if servers.Servers[0].Name != "FXH1" {
+		t.Errorf("Wrong value for servers.Servers[0].Name: got %v, want %v", servers.Servers[0].Name, "FXH1")
+	}
+
+	if servers.Servers[0].Group != "Servers/Devices^Live^FX Hosting^Physical^FX^Prod" {
+		t.Errorf("Wrong value for servers.Servers[0].Path: got %v, want %v", servers.Servers[0].Group, "Servers/Devices^Live^FX Hosting^Physical^FX^Prod")
+	}
+
+	if servers.Servers[0].GroupID != "193" {
+		t.Errorf("Wrong value for servers.Servers[0].ParentID: got %v, want %v", servers.Servers[0].GroupID, "193")
+	}
+
+	if servers.Servers[0].Status != "ok" {
+		t.Errorf("Wrong value for servers.Servers[0].Status: got %v, want %v", servers.Servers[0].Status, "ok")
+	}
+
+	if servers.Servers[0].Alias != "FXH1" {
+		t.Errorf("Wrong value for servers.Servers[0].Alias: got %v, want %v", servers.Servers[0].Alias, "FXH1")
+	}
 }
 
 func TestNewPAExternalAPIClient_NoApiKey(t *testing.T) {
 	client, err := NewPAExternalAPIClient("", "server", false)
-	assert.Nil(t, client)
-	assert.NotNil(t, err)
+
+	if client != nil {
+		t.Errorf("Client should be nil: got %v", client)
+	}
+	if err == nil {
+		t.Errorf("Error shouldn't be nil: got %v", err)
+	}
 }
 
 func TestPAExternalAPIClient_GetResources(t *testing.T) {
@@ -177,9 +256,15 @@ func TestPAExternalAPIClient_GetResources(t *testing.T) {
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	metrics, err := client.GetResources([]GroupFilter{{GroupName: "FX"}})
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(metrics.Values))
-	assert.Equal(t, "OK", metrics.Values[0].MonitorValue)
+	if err != nil {
+		t.Errorf("Error should be nil: got %v", err)
+	}
+	if len(metrics.Values) != 1 {
+		t.Errorf("Wrong size for metrics.Values: got %v, want %v", len(metrics.Values), 1)
+	}
+	if metrics.Values[0].MonitorValue != "OK" {
+		t.Errorf("Wrong value for metrics.Values[0].MonitorValue: got %v, want %v", metrics.Values[0].MonitorValue, "OK")
+	}
 }
 
 func TestPAExternalAPIClient_GetResources_NoGroups(t *testing.T) {
@@ -202,8 +287,12 @@ func TestPAExternalAPIClient_GetResources_NoGroups(t *testing.T) {
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	metrics, err := client.GetResources([]GroupFilter{{GroupName: "NOFX"}})
-	assert.Equal(t, 0, len(metrics.Values))
-	assert.Nil(t, err)
+	if len(metrics.Values) != 0 {
+		t.Errorf("Wrong size for metrics.Values: got %v, want %v", len(metrics.Values), 0)
+	}
+	if err != nil {
+		t.Errorf("Error should be nil: got %v", err)
+	}
 }
 
 func TestPAExternalAPIClient_GetResources_NoServers(t *testing.T) {
@@ -226,9 +315,16 @@ func TestPAExternalAPIClient_GetResources_NoServers(t *testing.T) {
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	metrics, err := client.GetResources([]GroupFilter{{GroupName: "FX"}})
-	assert.NotNil(t, metrics)
-	assert.Nil(t, err)
-	assert.Equal(t, 0, len(metrics.Values))
+	if metrics == nil {
+		t.Errorf("Metrics shouldn't be nil: got %v", metrics)
+	}
+	if err != nil {
+		t.Errorf("Error should be nil: got %v", err)
+	}
+
+	if len(metrics.Values) != 0 {
+		t.Errorf("Wrong size for metrics.Values: got %v, want %v", len(metrics.Values), 0)
+	}
 }
 
 func TestPAExternalAPIClient_GetResources_FilterServer(t *testing.T) {
@@ -251,10 +347,18 @@ func TestPAExternalAPIClient_GetResources_FilterServer(t *testing.T) {
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	metrics, err := client.GetResources([]GroupFilter{{GroupName: "FX", Servers: []string{"FXH1"}}})
-	assert.Equal(t, 1, len(metrics.Values))
-	assert.Nil(t, err)
+	if len(metrics.Values) != 1 {
+		t.Errorf("Wrong size: got %v, want %v", len(metrics.Values), 1)
+	}
+	if err != nil {
+		t.Errorf("Error should be nil: got %v", err)
+	}
 
 	metrics, err = client.GetResources([]GroupFilter{{GroupName: "FX", Servers: []string{"FXH2"}}})
-	assert.Equal(t, 0, len(metrics.Values))
-	assert.Nil(t, err)
+	if len(metrics.Values) != 0 {
+		t.Errorf("Wrong size: got %v, want %v", len(metrics.Values), 0)
+	}
+	if err != nil {
+		t.Errorf("Error should be nil: got %v", err)
+	}
 }

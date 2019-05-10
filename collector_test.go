@@ -4,8 +4,8 @@ import (
 	"errors"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"strings"
 	"testing"
 	"time"
 )
@@ -73,15 +73,25 @@ func TestCollector_Collect(t *testing.T) {
 	readOne := false
 	for m := range ch {
 		got := readMetric(m)
-		assert.Equal(t, dto.MetricType_UNTYPED, got.metricType)
+
+		if got.metricType != dto.MetricType_UNTYPED {
+			t.Errorf("Wrong metric type: got %v, want %v", got.metricType, dto.MetricType_UNTYPED)
+		}
 		if readOne {
-			assert.Equal(t, float64(0), got.value)
+			if got.value != float64(0) {
+				t.Errorf("Wrong value: got %v, want %v", got.value, float64(0))
+			}
 		} else {
-			assert.Equal(t, float64(1), got.value)
+			if got.value != float64(1) {
+				t.Errorf("Wrong value: got %v, want %v", got.value, float64(1))
+			}
 		}
 		readOne = true
 	}
-	assert.True(t, readOne)
+
+	if readOne != true {
+		t.Errorf("Wrong value: got %v, want %v", readOne, true)
+	}
 }
 
 func TestCollector_Collect_NoMetric(t *testing.T) {
@@ -104,10 +114,15 @@ func TestCollector_Collect_NoMetric(t *testing.T) {
 	}()
 	readOne := false
 	for m := range ch {
-		assert.Contains(t, m.Desc().String(), "poweradmin_error")
+		if !strings.Contains(m.Desc().String(), "poweradmin_error") {
+			t.Errorf("Description doesn't contain value %v: got %v", "poweradmin_error", m.Desc().String())
+		}
 		readOne = true
 	}
-	assert.True(t, readOne)
+
+	if readOne != true {
+		t.Errorf("Wrong value: got %v, want %v", readOne, true)
+	}
 }
 
 type labelMap map[string]string
@@ -139,6 +154,10 @@ func readMetric(m prometheus.Metric) MetricResult {
 
 func TestLoadConfig(t *testing.T) {
 	s := loadStatuses("status_mapping.yml")
-	assert.Equal(t, float64(1), s.Statuses["ok"])
-	assert.Equal(t, float64(0), s.Default)
+	if s.Statuses["ok"] != float64(1) {
+		t.Errorf("Wrong value: got %v, want %v", s.Statuses["ok"], float64(1))
+	}
+	if s.Default != float64(0) {
+		t.Errorf("Wrong value: got %v, want %v", s.Default, float64(0))
+	}
 }
