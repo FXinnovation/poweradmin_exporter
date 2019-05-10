@@ -94,7 +94,7 @@ func TestNewPAExternalAPIClient_GetMonitorInfos_UnmarshalError(t *testing.T) {
 	defer ts.Close()
 	monitor, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
 	_, err := monitor.GetMonitorInfos("ALL")
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 }
 
 func TestNewPAExternalAPIClient_GetMonitorInfos_TimeParsingError(t *testing.T) {
