@@ -66,6 +66,7 @@ type MonitoredValues struct {
 
 // MonitoredValue one value with its attributes
 type MonitoredValue struct {
+	MonitorID      string
 	MonitorTitle   string
 	MonitorValue   string
 	MonitorStatus  string
@@ -74,6 +75,7 @@ type MonitoredValue struct {
 	ServerName     string
 	GroupID        string
 	GroupName      string
+	GroupPath      string
 }
 
 type paTime struct {
@@ -160,7 +162,6 @@ func getResponse(requestURL string, client *http.Client) ([]byte, error) {
 		log.Errorf("Error building request: %v", err)
 		return nil, err
 	}
-	log.Warnf("Sending request: %s", requestURL)
 	resp, err := sendRequest(req, client)
 	if err != nil {
 		log.Errorf("Error querying %s: %s", req.RequestURI, err.Error())
@@ -235,12 +236,9 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 			if err != nil {
 				return nil, err
 			}
-			log.Warnf("Number of servers to parse: %d", len(servers.Servers))
 			filteredServers := filterServers(servers.Servers, filter.Servers)
-			log.Warnf("Number of servers to go: %d", len(filteredServers))
 			for _, server := range filteredServers {
 				values, err := client.GetMonitorInfos(server.ID)
-				log.Warnf("Number of infos: %d", len(values.Infos))
 				if err != nil {
 					return nil, err
 				}
@@ -248,12 +246,14 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 					newMetric := MonitoredValue{
 						GroupID:        group.ID,
 						GroupName:      group.Name,
+						GroupPath:      group.Path,
 						ServerID:       server.ID,
 						ServerName:     server.Name,
 						MonitorValue:   metric.Status,
 						MonitorStatus:  metric.Status,
 						MonitorTitle:   metric.Title,
 						MonitorLastRun: metric.LastRun.Time,
+						MonitorID:      metric.ID,
 					}
 					metrics.Values = append(metrics.Values, newMetric)
 				}
@@ -262,7 +262,6 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 			log.Warnf("group named %s not found", filter)
 		}
 	}
-	log.Warnf("number of motrics returned: %d", len(metrics.Values))
 	return &metrics, nil
 }
 
