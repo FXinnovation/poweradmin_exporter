@@ -245,28 +245,26 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 				metricTitles := make(map[string]int)
 				for _, metric := range values.Infos {
 					// metric title is not unique
-					// TODO need to find the right way to cope with that
-					var metricTitleToUse string
 					if _, titleExists := metricTitles[metric.Title]; titleExists {
 						metricTitles[metric.Title]++
-						metricTitleToUse = fmt.Sprintf("%s_%d", metric.Title, metricTitles[metric.Title])
+						log.Warnf("Duplicate monitor %s for server %s!", metric.Title, server.Name)
 					} else {
 						metricTitles[metric.Title] = 1
-						metricTitleToUse = metric.Title
+
+						newMetric := MonitoredValue{
+							GroupID:        group.ID,
+							GroupName:      group.Name,
+							GroupPath:      group.Path,
+							ServerID:       server.ID,
+							ServerName:     server.Name,
+							MonitorValue:   metric.Status,
+							MonitorStatus:  metric.Status,
+							MonitorTitle:   metric.Title,
+							MonitorLastRun: metric.LastRun.Time,
+							MonitorID:      metric.ID,
+						}
+						metrics.Values = append(metrics.Values, newMetric)
 					}
-					newMetric := MonitoredValue{
-						GroupID:        group.ID,
-						GroupName:      group.Name,
-						GroupPath:      group.Path,
-						ServerID:       server.ID,
-						ServerName:     server.Name,
-						MonitorValue:   metric.Status,
-						MonitorStatus:  metric.Status,
-						MonitorTitle:   metricTitleToUse,
-						MonitorLastRun: metric.LastRun.Time,
-						MonitorID:      metric.ID,
-					}
-					metrics.Values = append(metrics.Values, newMetric)
 				}
 			}
 		} else {
