@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
 	"gopkg.in/yaml.v2"
@@ -44,9 +43,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 	for _, metric := range metrics.Values {
-		// monitorTitle is not unique
-		// so we need to use the id te be sure that only one metric representing the same value is sent
-		metricName := getFormattedMetricName(fmt.Sprintf("%s_%s", metric.MonitorTitle,metric.MonitorID))
+		metricName := getFormattedMetricName(metric.MonitorTitle)
 		labels := make(map[string]string, 2)
 		labels["group_path"] = metric.GroupPath
 		labels["server_name"] = metric.ServerName
