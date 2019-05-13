@@ -242,7 +242,18 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 				if err != nil {
 					return nil, err
 				}
+				metricTitles := make(map[string]int)
 				for _, metric := range values.Infos {
+					// metric title is not unique
+					// TODO need to find the right way to cope with that
+					var metricTitleToUse string
+					if _, titleExists := metricTitles[metric.Title]; titleExists {
+						metricTitles[metric.Title]++
+						metricTitleToUse = fmt.Sprintf("%s_%d", metric.Title, metricTitles[metric.Title])
+					} else {
+						metricTitles[metric.Title] = 1
+						metricTitleToUse = metric.Title
+					}
 					newMetric := MonitoredValue{
 						GroupID:        group.ID,
 						GroupName:      group.Name,
@@ -251,7 +262,7 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 						ServerName:     server.Name,
 						MonitorValue:   metric.Status,
 						MonitorStatus:  metric.Status,
-						MonitorTitle:   metric.Title,
+						MonitorTitle:   metricTitleToUse,
 						MonitorLastRun: metric.LastRun.Time,
 						MonitorID:      metric.ID,
 					}
