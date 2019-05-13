@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/prometheus/common/log"
 	"io/ioutil"
-	"log"
-	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
+	"net/http"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
@@ -44,8 +44,8 @@ func main() {
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 
-	log.Println("Starting exporter", version.Info())
-	log.Println("Build context", version.BuildContext())
+	log.Info("Starting exporter ", version.Info())
+	log.Info("Build context ", version.BuildContext())
 
 	config = loadConfig(*configFile)
 	skipTLS := false
@@ -74,7 +74,7 @@ func main() {
 		}
 	})
 
-	log.Println("Beginning to serve on address ", *listenAddress)
+	log.Infof("Beginning to serve on address %v", *listenAddress)
 	log.Fatal(http.ListenAndServe(*listenAddress, nil))
 }
 
