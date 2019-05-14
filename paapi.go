@@ -245,6 +245,7 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 				metricTitles := make(map[string]int)
 				for _, metric := range values.Infos {
 					// metric title is not unique
+					// discarding duplicate monitors
 					if _, titleExists := metricTitles[metric.Title]; titleExists {
 						metricTitles[metric.Title]++
 						log.Warnf("Duplicate monitor %s for server %s!", metric.Title, server.Name)
