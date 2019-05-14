@@ -407,4 +407,3 @@ func TestPAExternalAPIClient_GetResources_DuplicateMonitor(t *testing.T) {
 		t.Errorf("Wrong value for metrics.Values[0].MonitorValue: got %v, want %v", metrics.Values[0].MonitorValue, "OK")
 	}
 }
-
