@@ -96,6 +96,10 @@ It exposes port 9575 and expects the config in /config.yml. To configure it, you
 ```
 $ docker run -p 9575 -v /path/on/host/config.yml:/config.yml fxinnovation/poweradmin_exporter:master
 ```
+By default, the status_mapping.yml file is included in the docker image but you can override it and use a new one with the same command as the config.yml:
+```
+$ docker run -p 9575 -v /path/on/host/config.yml:/config.yml -v /path/on/host/status_mapping.yml:/status_mapping.yml fxinnovation/poweradmin_exporter:master
+```
 
 ## Contributing
 
