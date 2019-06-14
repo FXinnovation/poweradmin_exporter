@@ -47,7 +47,10 @@ func main() {
 	log.Info("Starting exporter ", version.Info())
 	log.Info("Build context ", version.BuildContext())
 
-	config = loadConfig(*configFile)
+	config, err := loadConfig(*configFile)
+	if err != nil {
+		log.Fatalf("Error loading the config: %v", err)
+	}
 	skipTLS := false
 	if config.SkipTLSVerify {
 		skipTLS = true
@@ -78,19 +81,20 @@ func main() {
 	log.Fatal(http.ListenAndServe(*listenAddress, nil))
 }
 
-func loadConfig(configFile string) Config {
+func loadConfig(configFile string) (Config, error) {
 	config := Config{}
 
 	// Load the config from the file
 	configData, err := ioutil.ReadFile(configFile)
+
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		return config, err
 	}
 
 	errYAML := yaml.Unmarshal([]byte(configData), &config)
 	if errYAML != nil {
-		log.Fatalf("Error: %v", errYAML)
+		return config, errYAML
 	}
 
-	return config
+	return config, nil
 }
