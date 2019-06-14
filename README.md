@@ -1,11 +1,11 @@
 # poweradmin_exporter
 [![Build Status](https://travis-ci.org/FXinnovation/poweradmin_exporter.svg?branch=master)](https://travis-ci.org/FXinnovation/poweradmin_exporter)
 
-**WARNING - Work In Progress - this exporter is not ready to be used** 
 
 PowerAdmin exporter for Prometheus.
 
-Export metrics from PA - PowerAdmin (https://www.poweradmin.com/) monitoring solution.
+Export metrics from PA - PowerAdmin (https://www.poweradmin.com/) monitoring solution using the Power Admin API.
+It takes the status of the monitors and exposes them as an exporter. The status is exposed and mapped to a table which is dynamic.
 
 ### Prerequisites
 
