@@ -248,7 +248,7 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 					// discarding duplicate monitors
 					if _, titleExists := metricTitles[metric.Title]; titleExists {
 						metricTitles[metric.Title]++
-						log.Warnf("Duplicate monitor %s for server %s!", metric.Title, server.Name)
+						log.Warnf("Duplicate monitor %s for server %s and group path %s. This monitor will be ignored.", metric.Title, server.Name, group.Path)
 					} else {
 						metricTitles[metric.Title] = 1
 
