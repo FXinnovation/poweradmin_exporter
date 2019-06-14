@@ -6,7 +6,10 @@ PowerAdmin exporter for Prometheus.
 
 Export metrics from PA - PowerAdmin (https://www.poweradmin.com/) monitoring solution using the Power Admin API.
 It takes the status of the monitors and exposes them as an exporter. The status is exposed and mapped to a table which is dynamic.
-
+### Features
+- Uses the PA API to fetch monitor values
+- You can map the monitor status to a number in a file
+- Transform names of monitors so that it's compliant with prometheus
 ### Prerequisites
 
 To run this project, you will need a [working Go environment](https://golang.org/doc/install).
