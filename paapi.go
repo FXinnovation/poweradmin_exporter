@@ -269,7 +269,7 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 				}
 			}
 		} else {
-			log.Warnf("group named %s not found", filter)
+			log.Warnf("The configured group named %s was not found. It will be ignored.", filter)
 		}
 	}
 	return &metrics, nil
