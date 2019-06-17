@@ -66,12 +66,16 @@ type MonitoredValues struct {
 
 // MonitoredValue one value with its attributes
 type MonitoredValue struct {
+	MonitorID      string
 	MonitorTitle   string
 	MonitorValue   string
 	MonitorStatus  string
 	MonitorLastRun time.Time
 	ServerID       string
+	ServerName     string
 	GroupID        string
+	GroupName      string
+	GroupPath      string
 }
 
 type paTime struct {
@@ -83,7 +87,8 @@ func (c *paTime) UnmarshalXMLAttr(attr xml.Attr) error {
 
 	parse, err := time.Parse(shortForm, attr.Value)
 	if err != nil {
-		return err
+		log.Errorf("Error parsing %s", attr.Value)
+		parse = time.Now()
 	}
 	*c = paTime{parse}
 	return nil
@@ -157,7 +162,6 @@ func getResponse(requestURL string, client *http.Client) ([]byte, error) {
 		log.Errorf("Error building request: %v", err)
 		return nil, err
 	}
-
 	resp, err := sendRequest(req, client)
 	if err != nil {
 		log.Errorf("Error querying %s: %s", req.RequestURI, err.Error())
@@ -221,12 +225,12 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 
 	// populate once a set so that we don't search the groupNames slice several times for contains
 	for _, group := range groups.Groups {
-		groupSet[group.Name] = group
+		groupSet[group.Path] = group
 	}
 	metrics := MonitoredValues{}
 	metrics.Values = make([]MonitoredValue, 0)
 	for _, filter := range groupFilters {
-		group, groupExists := groupSet[filter.GroupName]
+		group, groupExists := groupSet[filter.GroupPath]
 		if groupExists {
 			servers, err := client.GetServerList(group.ID)
 			if err != nil {
@@ -238,20 +242,34 @@ func (client *PAExternalAPIClient) GetResources(groupFilters []GroupFilter) (*Mo
 				if err != nil {
 					return nil, err
 				}
+				metricTitles := make(map[string]int)
 				for _, metric := range values.Infos {
-					newMetric := MonitoredValue{
-						GroupID:        group.ID,
-						ServerID:       server.ID,
-						MonitorValue:   metric.Status,
-						MonitorStatus:  metric.Status,
-						MonitorTitle:   metric.Title,
-						MonitorLastRun: metric.LastRun.Time,
+					// metric title is not unique
+					// discarding duplicate monitors
+					if _, titleExists := metricTitles[metric.Title]; titleExists {
+						metricTitles[metric.Title]++
+						log.Warnf("Duplicate monitor %s for server %s and group path %s. This monitor will be ignored.", metric.Title, server.Name, group.Path)
+					} else {
+						metricTitles[metric.Title] = 1
+
+						newMetric := MonitoredValue{
+							GroupID:        group.ID,
+							GroupName:      group.Name,
+							GroupPath:      group.Path,
+							ServerID:       server.ID,
+							ServerName:     server.Name,
+							MonitorValue:   metric.Status,
+							MonitorStatus:  metric.Status,
+							MonitorTitle:   metric.Title,
+							MonitorLastRun: metric.LastRun.Time,
+							MonitorID:      metric.ID,
+						}
+						metrics.Values = append(metrics.Values, newMetric)
 					}
-					metrics.Values = append(metrics.Values, newMetric)
 				}
 			}
 		} else {
-			log.Debugf("group named %s not found", filter)
+			log.Warnf("The configured group named %s was not found. It will be ignored.", filter)
 		}
 	}
 	return &metrics, nil

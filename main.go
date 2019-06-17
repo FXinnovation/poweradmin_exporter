@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/prometheus/common/log"
 	"io/ioutil"
-	"log"
-	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
+	"net/http"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
@@ -31,7 +31,7 @@ type Config struct {
 
 // GroupFilter group selection
 type GroupFilter struct {
-	GroupName string   `yaml:"name"`
+	GroupPath string   `yaml:"path"`
 	Servers   []string `yaml:"servers"`
 }
 
@@ -44,10 +44,13 @@ func main() {
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 
-	log.Println("Starting exporter", version.Info())
-	log.Println("Build context", version.BuildContext())
+	log.Info("Starting exporter ", version.Info())
+	log.Info("Build context ", version.BuildContext())
 
-	config = loadConfig(*configFile)
+	config, err := loadConfig(*configFile)
+	if err != nil {
+		log.Fatalf("Error loading the config: %v", err)
+	}
 	skipTLS := false
 	if config.SkipTLSVerify {
 		skipTLS = true
@@ -74,23 +77,24 @@ func main() {
 		}
 	})
 
-	log.Println("Beginning to serve on address ", *listenAddress)
+	log.Infof("Beginning to serve on address %v", *listenAddress)
 	log.Fatal(http.ListenAndServe(*listenAddress, nil))
 }
 
-func loadConfig(configFile string) Config {
+func loadConfig(configFile string) (Config, error) {
 	config := Config{}
 
 	// Load the config from the file
 	configData, err := ioutil.ReadFile(configFile)
+
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		return config, err
 	}
 
 	errYAML := yaml.Unmarshal([]byte(configData), &config)
 	if errYAML != nil {
-		log.Fatalf("Error: %v", errYAML)
+		return config, errYAML
 	}
 
-	return config
+	return config, nil
 }

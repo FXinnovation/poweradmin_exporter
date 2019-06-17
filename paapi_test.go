@@ -22,16 +22,24 @@ const (
 <monitor id="8937" status="OK" depends_on="" title="Ping FXMACHINE1" lastRun="10-04-2019 13:18:28" nextRun="10-04-2019 13:19:28" errText="[Last response: 1 ms] " errActionIDs="570" fixedActionIDs="570" inErrSeconds="0" />
 </monitors>
 `
+	monitorStringDuplicate = `
+<monitors>
+<monitor id="8937" status="OK" depends_on="" title="Ping FXMACHINE1" lastRun="10-04-2019 13:18:28" nextRun="10-04-2019 13:19:28" errText="[Last response: 1 ms] " errActionIDs="570" fixedActionIDs="570" inErrSeconds="0" />
+<monitor id="8938" status="OK" depends_on="" title="Ping FXMACHINE1" lastRun="10-04-2019 13:18:28" nextRun="10-04-2019 13:19:28" errText="[Last response: 1 ms] " errActionIDs="570" fixedActionIDs="570" inErrSeconds="0" />
+</monitors>
+`
 	emptyMonitorList = `
 <monitors/>
 `
 	monitorUnmarshallErrorString = `
+<monitors2>
+<monitor id="8937" status="OK" depends_on="" title="Ping" lastRun="10-04-2019 13:18:28" nextRun="10-04-2019 13:19:28" errText="[Last response: 1 ms] " errActionIDs="570" fixedActionIDs="570" inErrSeconds="0" />
+</monitors>
+`
+	monitorTimeErrorString = `
 <monitors>
 <monitor id="8937" status="OK" depends_on="" title="Ping" lastRun="NoTime 13:18:28" nextRun="10-04-2019 13:19:28" errText="[Last response: 1 ms] " errActionIDs="570" fixedActionIDs="570" inErrSeconds="0" />
 </monitors>
-`
-	monitorStringNotAnXML = `
-?Not an xml
 `
 	serverListString = `
 <?xml version="1.0"?>
@@ -129,19 +137,25 @@ func TestNewPAExternalAPIClient_GetMonitorInfos_UnmarshalError(t *testing.T) {
 	}
 }
 
-func TestNewPAExternalAPIClient_GetMonitorInfos_TimeParsingError(t *testing.T) {
+func TestNewPAExternalAPIClient_GetMonitorInfos_TimeError(t *testing.T) {
 	// returns a monitor xml
 	monitorHandler := func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(monitorStringNotAnXML))
+		_, _ = w.Write([]byte(monitorTimeErrorString))
 	}
 
 	// create test server with handler
 	ts := httptest.NewServer(http.HandlerFunc(monitorHandler))
 	defer ts.Close()
 	monitor, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
-	_, err := monitor.GetMonitorInfos("ALL")
-	if err == nil {
-		t.Errorf("Error shouldn't be nil: got %v", err)
+	m, err := monitor.GetMonitorInfos("ALL")
+	if err != nil {
+		t.Errorf("Error should be nil: got %v", err)
+	}
+	if len(m.Infos) != 1 {
+		t.Errorf("Monitor should be parsed correctly!")
+		if m.Infos[0].Status != "OK" {
+			t.Errorf("XML value for status not parsed, got %s", m.Infos[0].Status)
+		}
 	}
 }
 
@@ -201,7 +215,7 @@ func TestNewPAExternalAPIClient_GetServerList(t *testing.T) {
 	}
 
 	if servers.Servers[0].ID != "568" {
-		t.Errorf("Wrong value for servers.Servers[0].ID: got %v, want %v",servers.Servers[0].ID, "568")
+		t.Errorf("Wrong value for servers.Servers[0].ID: got %v, want %v", servers.Servers[0].ID, "568")
 	}
 
 	if servers.Servers[0].Name != "FXH1" {
@@ -255,7 +269,7 @@ func TestPAExternalAPIClient_GetResources(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
-	metrics, err := client.GetResources([]GroupFilter{{GroupName: "FX"}})
+	metrics, err := client.GetResources([]GroupFilter{{GroupPath: "Servers/Devices^Live^FX"}})
 	if err != nil {
 		t.Errorf("Error should be nil: got %v", err)
 	}
@@ -286,7 +300,7 @@ func TestPAExternalAPIClient_GetResources_NoGroups(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
-	metrics, err := client.GetResources([]GroupFilter{{GroupName: "NOFX"}})
+	metrics, err := client.GetResources([]GroupFilter{{GroupPath: "NOFX"}})
 	if len(metrics.Values) != 0 {
 		t.Errorf("Wrong size for metrics.Values: got %v, want %v", len(metrics.Values), 0)
 	}
@@ -314,7 +328,7 @@ func TestPAExternalAPIClient_GetResources_NoServers(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
-	metrics, err := client.GetResources([]GroupFilter{{GroupName: "FX"}})
+	metrics, err := client.GetResources([]GroupFilter{{GroupPath: "Servers/Devices^Live^FX"}})
 	if metrics == nil {
 		t.Errorf("Metrics shouldn't be nil: got %v", metrics)
 	}
@@ -346,7 +360,7 @@ func TestPAExternalAPIClient_GetResources_FilterServer(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
 	defer ts.Close()
 	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
-	metrics, err := client.GetResources([]GroupFilter{{GroupName: "FX", Servers: []string{"FXH1"}}})
+	metrics, err := client.GetResources([]GroupFilter{{GroupPath: "Servers/Devices^Live^FX", Servers: []string{"FXH1"}}})
 	if len(metrics.Values) != 1 {
 		t.Errorf("Wrong size: got %v, want %v", len(metrics.Values), 1)
 	}
@@ -354,11 +368,42 @@ func TestPAExternalAPIClient_GetResources_FilterServer(t *testing.T) {
 		t.Errorf("Error should be nil: got %v", err)
 	}
 
-	metrics, err = client.GetResources([]GroupFilter{{GroupName: "FX", Servers: []string{"FXH2"}}})
+	metrics, err = client.GetResources([]GroupFilter{{GroupPath: "Servers/Devices^Live^FX", Servers: []string{"FXH2"}}})
 	if len(metrics.Values) != 0 {
 		t.Errorf("Wrong size: got %v, want %v", len(metrics.Values), 0)
 	}
 	if err != nil {
 		t.Errorf("Error should be nil: got %v", err)
+	}
+}
+
+func TestPAExternalAPIClient_GetResources_DuplicateMonitor(t *testing.T) {
+	resourcesHandler := func(w http.ResponseWriter, r *http.Request) {
+		apiParam := r.URL.Query()["API"][0]
+		if apiParam == "GET_GROUP_LIST" {
+			_, _ = w.Write([]byte(groupListString))
+		} else if apiParam == "GET_SERVER_LIST" {
+			_, _ = w.Write([]byte(serverListString))
+		} else if apiParam == "GET_MONITOR_INFO" {
+			if r.URL.Query()["CID"][0] == "568" {
+				_, _ = w.Write([]byte(monitorStringDuplicate))
+			} else {
+				_, _ = w.Write([]byte(emptyMonitorList))
+			}
+		}
+	}
+	// create test server with handler
+	ts := httptest.NewServer(http.HandlerFunc(resourcesHandler))
+	defer ts.Close()
+	client, _ := NewPAExternalAPIClient("1234key", ts.URL, false)
+	metrics, err := client.GetResources([]GroupFilter{{GroupPath: "Servers/Devices^Live^FX"}})
+	if err != nil {
+		t.Errorf("Error should be nil: got %v", err)
+	}
+	if len(metrics.Values) != 1 {
+		t.Errorf("Wrong size for metrics.Values: got %v, want %v", len(metrics.Values), 1)
+	}
+	if metrics.Values[0].MonitorValue != "OK" {
+		t.Errorf("Wrong value for metrics.Values[0].MonitorValue: got %v, want %v", metrics.Values[0].MonitorValue, "OK")
 	}
 }
