@@ -6,6 +6,7 @@ RUN make build
 FROM quay.io/prometheus/busybox:glibc AS app
 LABEL maintainer="FXinnovation CloudToolDevelopment <CloudToolDevelopment@fxinnovation.com>"
 COPY --from=builder /go/src/github.com/FXinnovation/poweradmin_exporter/poweradmin_exporter /bin/poweradmin_exporter
+COPY --from=builder /go/src/github.com/FXinnovation/poweradmin_exporter/status_mapping.yml /status_mapping.yml
 EXPOSE      9575
 WORKDIR /
 ENTRYPOINT  [ "/bin/poweradmin_exporter" ]
