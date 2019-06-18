@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/prometheus/common/log"
@@ -10,8 +9,8 @@ import (
 	"time"
 )
 
-// SqlServerConnection maps a connection to an SQL Server DB
-type SqlServerConnection struct {
+// SQLServerConnection maps a connection to an SQL Server DB
+type SQLServerConnection struct {
 	connectionString string
 	conn             *sql.DB
 }
@@ -27,7 +26,8 @@ type StatData struct {
 	ItemName string
 }
 
-func (connection *SqlServerConnection) Connect() error {
+// Connect connect to the DB
+func (connection *SQLServerConnection) Connect() error {
 	conn, err := sql.Open("mssql", connection.connectionString)
 	if err != nil {
 		return err
@@ -37,11 +37,13 @@ func (connection *SqlServerConnection) Connect() error {
 	return nil
 }
 
-func (connection *SqlServerConnection) Close() error {
+// Close closes the DB connection
+func (connection *SQLServerConnection) Close() error {
 	return connection.conn.Close()
 }
 
-func (connection *SqlServerConnection) GetStatData(serversID []string) ([]StatData, error) {
+// GetStatData returns the stats for the servers id passed
+func (connection *SQLServerConnection) GetStatData(serversID []string) ([]StatData, error) {
 	inClause := strings.Join(serversID, ",")
 	rows, err := connection.conn.Query(fmt.Sprintf("SELECT CompID, Value, Date, StatType, Unit, StatName, ItemName FROM StatData, Statistic WHERE StatData.StatID = Statistic.StatID and Statistic.CompID in (%s)", inClause))
 	if err != nil {
@@ -59,7 +61,7 @@ func (connection *SqlServerConnection) GetStatData(serversID []string) ([]StatDa
 	}
 	if rows.Err() != nil {
 		log.Fatal("failed to read all posts: " + rows.Err().Error())
-		return nil, errors.New(fmt.Sprintf("failed to read all stats %s", rows.Err().Error()))
+		return nil, fmt.Errorf("failed to read all stats %s", rows.Err().Error())
 	}
 	return stats, nil
 }

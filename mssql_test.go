@@ -13,11 +13,11 @@ func TestSqlServerConnection_GetStatData(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer db.Close()
-	connection := &SqlServerConnection{
+	connection := &SQLServerConnection{
 		connectionString: "sqlserver://SA:FXinn0v@tion2019$@localhost?database=PA_DB",
 		conn:             db,
 	}
-	rowTime,_ := time.Parse("2006-01-02 15:04:05.000","2019-04-24 20:41:35.000")
+	rowTime, _ := time.Parse("2006-01-02 15:04:05.000", "2019-04-24 20:41:35.000")
 	rows := sqlmock.NewRows([]string{"CompID", "Value", "Date", "StatType", "Unit", "StatName", "ItemName"}).
 		AddRow(2, 118180806656, driver.Value(rowTime), 22, 1, "Free Bytes", "C:")
 	mock.ExpectQuery("^SELECT (.+) FROM StatData, Statistic WHERE StatData.StatID = Statistic.StatID and Statistic.CompID in (.+)$").WillReturnRows(rows)
