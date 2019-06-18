@@ -15,7 +15,7 @@ LDFLAGS=-ldflags "\
           -X $(SRC_DIR)/information.GitDirty=$(GIT_DIRTY) \
           -X $(SRC_DIR)/information.GitDescribe=$(GIT_DESCRIBE)"
 
-all: lint format build test
+all: vet lint format build test
 
 test: build ## running test after build
 	@echo ">> running tests"
