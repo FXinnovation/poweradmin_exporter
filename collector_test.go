@@ -61,10 +61,18 @@ func TestCollector_Collect(t *testing.T) {
 	groups := make([]GroupFilter, 1)
 	gr := GroupFilter{GroupPath: "toto"}
 	groups[0] = gr
+	statuses := make(map[string]float64, 1)
+	statuses["ok"] = 1
 	config = Config{
-		ServerURL: "https://hello.com",
-		APIKey:    "1234",
-		Groups:    groups,
+		Interface: InterfaceConfig{
+			ServerURL: "https://hello.com",
+			APIKey:    "1234",
+		},
+		Filter: FilterConfig{Groups: groups},
+		StatusMapping: StatusConfig{
+			Statuses: statuses,
+			Default:  0,
+		},
 	}
 	go func() {
 		collector.Collect(ch)
@@ -104,9 +112,11 @@ func TestCollector_Collect_NoMetric(t *testing.T) {
 	gr := GroupFilter{GroupPath: "toto"}
 	groups[0] = gr
 	config = Config{
-		ServerURL: "https://hello.com",
-		APIKey:    "1234",
-		Groups:    groups,
+		Interface: InterfaceConfig{
+			ServerURL: "https://hello.com",
+			APIKey:    "1234",
+		},
+		Filter: FilterConfig{Groups: groups},
 	}
 	go func() {
 		collector.Collect(ch)
@@ -150,14 +160,4 @@ func readMetric(m prometheus.Metric) MetricResult {
 		return MetricResult{labels: labels, value: pb.GetUntyped().GetValue(), metricType: dto.MetricType_UNTYPED}
 	}
 	panic("Unsupported metric type")
-}
-
-func TestLoadConfig(t *testing.T) {
-	s := loadStatuses("status_mapping.yml")
-	if s.Statuses["ok"] != float64(1) {
-		t.Errorf("Wrong value: got %v, want %v", s.Statuses["ok"], float64(1))
-	}
-	if s.Default != float64(0) {
-		t.Errorf("Wrong value: got %v, want %v", s.Default, float64(0))
-	}
 }

@@ -3,8 +3,6 @@ package main
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"regexp"
 	"strings"
 )
@@ -12,16 +10,11 @@ import (
 var (
 	powerAdminErrorDesc = prometheus.NewDesc("poweradmin_error", "Error collecting metrics", nil, nil)
 	invalidMetricChars  = regexp.MustCompile("[^a-zA-Z0-9_:]")
-	statusConfig        StatusConfig
 )
 
 // Collector generic collector type
 type Collector struct {
 	PowerAdminClient PAExternalAPI
-}
-
-func init() {
-	statusConfig = loadStatuses("status_mapping.yml")
 }
 
 // NewCollector returns the collector
@@ -36,7 +29,7 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect metrics from PowerAdmin external API
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
-	metrics, err := c.PowerAdminClient.GetResources(config.Groups)
+	metrics, err := c.PowerAdminClient.GetResources(config.Filter.Groups)
 	if err != nil {
 		log.Infof("Failed to get metrics for groups: %v", err)
 		ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
@@ -53,7 +46,6 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			getFloatValue(metric.MonitorValue),
 		)
 	}
-
 }
 
 func getFormattedMetricName(name string) string {
@@ -70,27 +62,8 @@ func getFormattedMetricName(name string) string {
 }
 
 func getFloatValue(value string) float64 {
-	if st, stExist := statusConfig.Statuses[strings.ToLower(value)]; stExist {
+	if st, stExist := config.StatusMapping.Statuses[strings.ToLower(value)]; stExist {
 		return st
 	}
-	return statusConfig.Default
-}
-
-// StatusConfig configure the status values to be sent
-type StatusConfig struct {
-	Statuses map[string]float64 `yaml:"values"`
-	Default  float64            `yaml:"default"`
-}
-
-func loadStatuses(filename string) StatusConfig {
-	thisConfig := StatusConfig{}
-	statusData, err := ioutil.ReadFile(filename)
-	if err != nil {
-		log.Fatal("Unable to read status config file")
-	}
-	yamlErr := yaml.Unmarshal([]byte(statusData), &thisConfig)
-	if yamlErr != nil {
-		log.Fatal("Problem unmarshalling status config file")
-	}
-	return thisConfig
+	return config.StatusMapping.Default
 }

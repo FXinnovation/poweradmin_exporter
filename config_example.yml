@@ -1,9 +1,0 @@
-server: "https://paserver"
-api_key: "THE_API_KEY"
-skip_tls_verify: true
-group:
-  - name: "Dev"
-    servers:
-    - "Server1"
-    - "Server2"
-  - name: "MyWonderfulMachines"
