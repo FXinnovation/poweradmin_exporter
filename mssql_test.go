@@ -14,7 +14,7 @@ func TestSqlServerConnection_GetStatData(t *testing.T) {
 	}
 	defer db.Close()
 	connection := &SQLServerConnection{
-		conn:             db,
+		conn: db,
 	}
 	rowTime, _ := time.Parse("2006-01-02 15:04:05.000", "2019-04-24 20:41:35.000")
 	rows := sqlmock.NewRows([]string{"CompID", "Value", "Date", "StatType", "Unit", "StatName", "ItemName"}).
