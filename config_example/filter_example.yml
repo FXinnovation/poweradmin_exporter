@@ -1,6 +1,6 @@
 group:
-  - name: "Dev"
+  - path: "Dev"
     servers:
       - "Server1"
       - "Server2"
-  - name: "MyWonderfulMachines"
+  - path: "MyWonderfulMachines"

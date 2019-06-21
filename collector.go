@@ -29,7 +29,7 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect metrics from PowerAdmin external API
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
-	metrics, err := c.PowerAdminClient.GetResources(config.Filter.Groups)
+	metrics, err := c.PowerAdminClient.GetResources(config.Groups)
 	if err != nil {
 		log.Infof("Failed to get metrics for groups: %v", err)
 		ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
