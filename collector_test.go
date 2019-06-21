@@ -64,11 +64,9 @@ func TestCollector_Collect(t *testing.T) {
 	statuses := make(map[string]float64, 1)
 	statuses["ok"] = 1
 	config = Config{
-		Interface: InterfaceConfig{
-			ServerURL: "https://hello.com",
-			APIKey:    "1234",
-		},
-		Filter: FilterConfig{Groups: groups},
+		ServerURL: "https://hello.com",
+		APIKey:    "1234",
+		Groups:    groups,
 		StatusMapping: StatusConfig{
 			Statuses: statuses,
 			Default:  0,
@@ -112,11 +110,9 @@ func TestCollector_Collect_NoMetric(t *testing.T) {
 	gr := GroupFilter{GroupPath: "toto"}
 	groups[0] = gr
 	config = Config{
-		Interface: InterfaceConfig{
-			ServerURL: "https://hello.com",
-			APIKey:    "1234",
-		},
-		Filter: FilterConfig{Groups: groups},
+		ServerURL: "https://hello.com",
+		APIKey:    "1234",
+		Groups:    groups,
 	}
 	go func() {
 		collector.Collect(ch)

@@ -32,7 +32,27 @@ make test
 ./poweradmin_exporter -h
 ```
 
-## PowerAdmin integration
+## Deployment
+
+The exporter listens on port 9575 by default, which can be changed if you need.
+[This port is the default port for this exporter.](https://github.com/prometheus/prometheus/wiki/Default-port-allocations)
+
+### Exporter configuration
+The configuration is by default under the *config* folder. The *--config.dir* command line option lets the possibility to override this value.
+
+All the files placed in this folder are parsed whatever their names, but must be YAML files.
+The config files can contain the following items
+```
+server: "https://paserver"
+api_key: "THE_API_KEY"
+skip_tls_verify: false
+group: ## a list of group names to monitor
+  - name: "Dev"
+    servers:
+      - "Server"
+  - name: "MyWonderfulMachines"
+```
+The _skip_tls_verify_ option gives you the possibility to skip the certificate checking for self signed certs for example.
 ### Status mapping for monitors
 PowerAdmin API uses the following values for the status of the monitors.
 
@@ -65,28 +85,15 @@ Unlicensed|9
  	
 
 The _status_mapping.yml_ file contains the values as float64 returned in the metrics for each string status returned by PowerAdmin. You can also specify a default value.
-	 
-
-
-## Deployment
-
-The exporter listens on port 9575 by default, which can be changed if you need.
-[This port is the default port for this exporter.](https://github.com/prometheus/prometheus/wiki/Default-port-allocations)
-
-### Exporter configuration
-
-A config.yml file must exist and contains the following items
 ```
-server: "https://paserver"
-api_key: "THE_API_KEY"
-skip_tls_verify: false
-group: ## a list of group names to monitor
-  - name: "Dev"
-    servers:
-      - "Server"
-  - name: "MyWonderfulMachines"
+statusMapping:
+  values:
+    "ok": 1
+  default: 0
+
 ```
-The _skip_tls_verify_ option gives you the possibility to skip the certificate checking for self signed certs for example.
+
+
 ## Building
 Build the sources with 
 ```bash

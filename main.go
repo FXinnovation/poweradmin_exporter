@@ -13,12 +13,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const (
-	interfaceConfigFileName = "config.yml"
-	filterConfigFileName    = "filter.yml"
-	statusMappingFileName   = "status_mapping.yml"
-)
-
 var (
 	configPath    = kingpin.Flag("config.dir", "Exporter configuration folder.").Default("config").String()
 	listenAddress = kingpin.Flag("web.listen-address", "The address to listen on for HTTP requests.").Default(":9575").String()
@@ -28,21 +22,11 @@ var (
 
 // Config collection of config files
 type Config struct {
-	Interface     InterfaceConfig
-	Filter        FilterConfig
-	StatusMapping StatusConfig
-}
-
-// InterfaceConfig configures the interfaces to use
-type InterfaceConfig struct {
-	ServerURL     string `yaml:"server"`
-	APIKey        string `yaml:"api_key"`
-	SkipTLSVerify bool   `yaml:"skip_tls_verify"`
-}
-
-// FilterConfig configures the filter to apply
-type FilterConfig struct {
-	Groups []GroupFilter `yaml:"group"`
+	ServerURL     string        `yaml:"server"`
+	APIKey        string        `yaml:"api_key"`
+	SkipTLSVerify bool          `yaml:"skip_tls_verify"`
+	Groups        []GroupFilter `yaml:"group"`
+	StatusMapping StatusConfig  `yaml:"statusMapping"`
 }
 
 // GroupFilter group selection
@@ -69,29 +53,16 @@ func main() {
 	log.Info("Starting exporter ", version.Info())
 	log.Info("Build context ", version.BuildContext())
 
-	config := Config{
-		Interface:     InterfaceConfig{},
-		Filter:        FilterConfig{},
-		StatusMapping: StatusConfig{},
-	}
-	err := loadConfig(*configPath, statusMappingFileName, config.StatusMapping)
-	if err != nil {
-		log.Fatalf("Error loading the config: %v", err)
-	}
-	err = loadConfig(*configPath, interfaceConfigFileName, config.Interface)
-	if err != nil {
-		log.Fatalf("Error loading the config: %v", err)
-	}
-	err = loadConfig(*configPath, filterConfigFileName, config.Filter)
+	config, err := loadConfig(*configPath)
 	if err != nil {
 		log.Fatalf("Error loading the config: %v", err)
 	}
 
 	skipTLS := false
-	if config.Interface.SkipTLSVerify {
+	if config.SkipTLSVerify {
 		skipTLS = true
 	}
-	powerAdminClient, err := NewPAExternalAPIClient(config.Interface.APIKey, config.Interface.ServerURL, skipTLS)
+	powerAdminClient, err := NewPAExternalAPIClient(config.APIKey, config.ServerURL, skipTLS)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -117,19 +88,26 @@ func main() {
 	log.Fatal(http.ListenAndServe(*listenAddress, nil))
 }
 
-func loadConfig(configDir string, configName string, config interface{}) error {
+func loadConfig(configDir string) (Config, error) {
 
-	// Load the config from the file
-	configData, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", configDir, configName))
-
+	configuration := Config{}
+	files, err := ioutil.ReadDir(configDir)
 	if err != nil {
-		return err
+		return configuration, err
+	}
+	configData := make([]byte, 0)
+	for _, file := range files {
+		configThisData, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", configDir, file.Name()))
+		if err != nil {
+			return configuration, err
+		}
+		configData = append(configData, configThisData...)
 	}
 
-	errYAML := yaml.Unmarshal([]byte(configData), &config)
+	errYAML := yaml.Unmarshal([]byte(configData), &configuration)
 	if errYAML != nil {
-		return errYAML
+		return configuration, errYAML
 	}
 
-	return nil
+	return configuration, nil
 }

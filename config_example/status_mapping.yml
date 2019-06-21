@@ -1,0 +1,4 @@
+statusMapping:
+  values:
+    "ok": 1
+  default: 0
