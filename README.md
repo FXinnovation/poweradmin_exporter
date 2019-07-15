@@ -112,14 +112,11 @@ You can build a docker image using:
 make docker
 ```
 The resulting image is named `fxinnovation/poweradmin_exporter:{git-branch}`.
-It exposes port 9575 and expects the config in /config.yml. To configure it, you can bind-mount a config from your host: 
+It exposes port 9575 and expects the config files to be in */config* folder including the _status_mapping_ file. To configure it, you can bind-mount a config from your host: 
 ```
-$ docker run -p 9575 -v /path/on/host/config.yml:/config.yml fxinnovation/poweradmin_exporter:master
+$ docker run -p 9575 -v /path/on/host/config:/config fxinnovation/poweradmin_exporter:master
 ```
-By default, the status_mapping.yml file is included in the docker image but you can override it and use a new one with the same command as the config.yml:
-```
-$ docker run -p 9575 -v /path/on/host/config.yml:/config.yml -v /path/on/host/status_mapping.yml:/status_mapping.yml fxinnovation/poweradmin_exporter:master
-```
+
 
 ## Contributing
 
