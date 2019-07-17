@@ -14,5 +14,6 @@ coverage-test.xml
 *.out
 
 # Config files
-config.yml
+config
+config/*
 
