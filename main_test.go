@@ -11,7 +11,7 @@ func TestMain_LoadConfig(t *testing.T) {
 	if len(config.Groups) != 2 {
 		t.Errorf("Groups filter has not been parsed correctly")
 	}
-	if config.Groups[0].GroupPath != "Dev" {
+	if config.Groups[0].GroupPath != "Servers/Devices^Live^Dev" {
 		t.Errorf("Groups path not parsed correctly")
 	}
 	if config.Groups[0].Servers[0] != "Server1" {

@@ -32,7 +32,7 @@ func (mock *MockPAExternalAPI) GetServerList(gid string) (*ServerList, error) {
 }
 func TestCollector_Collect(t *testing.T) {
 	api := MockPAExternalAPI{}
-	collector := NewCollector(&api)
+
 	values := make([]MonitoredValue, 2)
 	value := MonitoredValue{
 		MonitorTitle:   "Toto",
@@ -63,7 +63,7 @@ func TestCollector_Collect(t *testing.T) {
 	groups[0] = gr
 	statuses := make(map[string]float64, 1)
 	statuses["ok"] = 1
-	config = Config{
+	config := Config{
 		ServerURL: "https://hello.com",
 		APIKey:    "1234",
 		Groups:    groups,
@@ -72,6 +72,7 @@ func TestCollector_Collect(t *testing.T) {
 			Default:  0,
 		},
 	}
+	collector := NewCollector(&api, config)
 	go func() {
 		collector.Collect(ch)
 		close(ch)
@@ -102,18 +103,19 @@ func TestCollector_Collect(t *testing.T) {
 
 func TestCollector_Collect_NoMetric(t *testing.T) {
 	api := MockPAExternalAPI{}
-	collector := NewCollector(&api)
+
 	api.On("GetResources", mock.Anything).Return(&MonitoredValues{}, errors.New("error in get resources"))
 	ch := make(chan prometheus.Metric)
 
 	groups := make([]GroupFilter, 1)
 	gr := GroupFilter{GroupPath: "toto"}
 	groups[0] = gr
-	config = Config{
+	config := Config{
 		ServerURL: "https://hello.com",
 		APIKey:    "1234",
 		Groups:    groups,
 	}
+	collector := NewCollector(&api, config)
 	go func() {
 		collector.Collect(ch)
 		close(ch)
