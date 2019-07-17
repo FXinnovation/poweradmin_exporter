@@ -17,7 +17,6 @@ var (
 	configPath    = kingpin.Flag("config.dir", "Exporter configuration folder.").Default("config").String()
 	listenAddress = kingpin.Flag("web.listen-address", "The address to listen on for HTTP requests.").Default(":9575").String()
 	metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
-	config        Config
 )
 
 // Config collection of config files
@@ -67,7 +66,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	collector := NewCollector(powerAdminClient)
+	collector := NewCollector(powerAdminClient, config)
 	prometheus.MustRegister(collector)
 
 	http.Handle(*metricsPath, promhttp.Handler())
@@ -97,6 +96,7 @@ func loadConfig(configDir string) (Config, error) {
 	}
 	configData := make([]byte, 0)
 	for _, file := range files {
+		log.Infof("Parsing %s/%s config file", configDir, file.Name())
 		configThisData, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", configDir, file.Name()))
 		if err != nil {
 			return configuration, err
@@ -108,6 +108,5 @@ func loadConfig(configDir string) (Config, error) {
 	if errYAML != nil {
 		return configuration, errYAML
 	}
-
 	return configuration, nil
 }

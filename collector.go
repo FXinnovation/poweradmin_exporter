@@ -15,11 +15,12 @@ var (
 // Collector generic collector type
 type Collector struct {
 	PowerAdminClient PAExternalAPI
+	Config           Config
 }
 
 // NewCollector returns the collector
-func NewCollector(client PAExternalAPI) *Collector {
-	return &Collector{PowerAdminClient: client}
+func NewCollector(client PAExternalAPI, config Config) *Collector {
+	return &Collector{PowerAdminClient: client, Config: config}
 }
 
 // Describe to satisfy the collector interface.
@@ -29,12 +30,13 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect metrics from PowerAdmin external API
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
-	metrics, err := c.PowerAdminClient.GetResources(config.Groups)
+	metrics, err := c.PowerAdminClient.GetResources(c.Config.Groups)
 	if err != nil {
 		log.Infof("Failed to get metrics for groups: %v", err)
 		ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
 		return
 	}
+	log.Infof("Received %d metrics", len(metrics.Values))
 	for _, metric := range metrics.Values {
 		metricName := getFormattedMetricName(metric.MonitorTitle)
 		labels := make(map[string]string, 2)
@@ -43,7 +45,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(
 			prometheus.NewDesc(metricName, metricName, nil, labels),
 			prometheus.UntypedValue,
-			getFloatValue(metric.MonitorValue),
+			getFloatValue(metric.MonitorValue, c.Config),
 		)
 	}
 }
@@ -61,7 +63,7 @@ func getFormattedMetricName(name string) string {
 	return metricName
 }
 
-func getFloatValue(value string) float64 {
+func getFloatValue(value string, config Config) float64 {
 	if st, stExist := config.StatusMapping.Statuses[strings.ToLower(value)]; stExist {
 		return st
 	}
