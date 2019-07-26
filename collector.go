@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 	"regexp"
 	"strings"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/log"
 )
 
 var (
@@ -48,6 +49,36 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			getFloatValue(metric.MonitorValue, c.Config),
 		)
 	}
+
+	// SECTION collect data from PA database
+	db := &SQLServerConnection{connectionString: c.Config.Database}
+	err = db.Connect()
+	if err != nil {
+		log.Errorf("Failed to connnect to PA database: %s", err.Error())
+		ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
+		return
+	}
+
+	// take each server from each group, lookup their CompID
+	// and retrieve the last entry for all available metrics
+	for _, confGrp := range c.Config.Groups {
+		for _, server := range confGrp.Servers {
+			compInfo, err := db.GetConfigComputerInfo(server)
+			if err != nil {
+				log.Error(err.Error())
+				ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
+				return
+			}
+			dbMetrics, err := db.GetAllServerMetric(compInfo.CompID)
+			if err != nil {
+				log.Error(err.Error())
+				ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
+				return
+			}
+			log.Info(dbMetrics)
+		}
+	}
+
 }
 
 func getFormattedMetricName(name string) string {
