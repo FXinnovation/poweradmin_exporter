@@ -152,7 +152,8 @@ SELECT 	CI.Name,
                       ) filteredSD ON filteredSD.StatID = SD.StatID
                                    AND filteredSD.latest = SD.Date
                 ) SD
-              INNER JOIN Statistic St ON (SD.StatID = St.StatID)
+			  INNER JOIN Statistic St ON (SD.StatID = St.StatID)
+			  WHERE St.ItemAlias <> ''
       ) D ON CI.CompID = D.CompID
   WHERE CI.CompID = %d
   ORDER BY D.StatID`, serverID)
