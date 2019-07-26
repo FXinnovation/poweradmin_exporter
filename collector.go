@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -76,6 +77,18 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 				return
 			}
 			log.Info(dbMetrics)
+
+			for _, dbm := range dbMetrics {
+				metricName := getFormattedMetricName(fmt.Sprintf("%s__%s", dbm.ItemAlias, dbm.UnitStr))
+				labels := make(map[string]string, 2)
+				labels["group_path"] = confGrp.GroupPath
+				labels["server_name"] = server
+				ch <- prometheus.MustNewConstMetric(
+					prometheus.NewDesc(metricName, metricName, nil, labels),
+					prometheus.UntypedValue,
+					dbm.Value,
+				)
+			}
 		}
 	}
 
