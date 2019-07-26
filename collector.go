@@ -63,7 +63,13 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	// take each server from each group, lookup their CompID
 	// and retrieve the last entry for all available metrics
 	for _, confGrp := range c.Config.Groups {
-		for _, server := range confGrp.Servers {
+		serverList := confGrp.Servers
+
+		if len(serverList) == 0 {
+			serverList, err = db.GetAllServersFor(confGrp.GroupPath)
+		}
+
+		for _, server := range serverList {
 			compInfo, err := db.GetConfigComputerInfo(server)
 			if err != nil {
 				log.Error(err.Error())
@@ -76,7 +82,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 				ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
 				return
 			}
-			log.Info(dbMetrics)
+			// log.Info(dbMetrics)
 
 			for _, dbm := range dbMetrics {
 				metricName := getFormattedMetricName(fmt.Sprintf("%s__%s", dbm.ItemAlias, dbm.UnitStr))

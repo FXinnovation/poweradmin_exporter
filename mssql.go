@@ -59,7 +59,6 @@ func (connection *SQLServerConnection) Connect() error {
 		return err
 	}
 	connection.conn = conn
-
 	return nil
 }
 
@@ -119,6 +118,40 @@ SELECT  TOP 1
 		return ConfigComputerInfo{}, fmt.Errorf("error retrieving computer info: %s", rows.Err().Error())
 	}
 	return ci, nil
+}
+
+func (connection *SQLServerConnection) GetAllServersFor(group string) ([]string, error) {
+	sql := fmt.Sprintf(`
+SELECT CI.*
+  FROM ConfigComputerInfo CI
+	INNER JOIN (
+		SELECT *
+		  FROM ConfigGroupInfo
+	) GI
+	ON CI.GroupID = GI.GroupID
+  WHERE GI.ParentGroupPath = '%s'
+`, strings.ReplaceAll(group, "^", "\\"))
+
+	log.Infof("query to be executed: %s\n", sql)
+
+	rows, err := connection.conn.Query(sql)
+	if err != nil {
+		log.Error("DB Query failed:", err)
+		return nil, err
+	}
+	defer rows.Close()
+	var servList []string
+	for rows.Next() {
+		ci := ConfigComputerInfo{}
+		if err := rows.Scan(&ci.CompID, &ci.Name, &ci.Alias, &ci.GroupID); err != nil {
+			return nil, err
+		}
+		servList = append(servList, ci.Alias)
+	}
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("failed to read all servers %s", rows.Err().Error())
+	}
+	return servList, nil
 }
 
 func (connection *SQLServerConnection) GetAllServerMetric(serverID int) ([]ServerMetric, error) {
