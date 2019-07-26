@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/log"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/log"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/version"
@@ -24,6 +25,7 @@ type Config struct {
 	ServerURL     string        `yaml:"server"`
 	APIKey        string        `yaml:"api_key"`
 	SkipTLSVerify bool          `yaml:"skip_tls_verify"`
+	Database      string        `yaml:"database"`
 	Groups        []GroupFilter `yaml:"group"`
 	StatusMapping StatusConfig  `yaml:"statusMapping"`
 }

@@ -46,6 +46,7 @@ The config files can contain the following items
 server: "https://paserver"
 api_key: "THE_API_KEY"
 skip_tls_verify: false
+database: "server=localhost;Database=PA_DB;Schema=dbo;user id=sa;password=secret123;"
 group: ## a list of group names to monitor
   - name: "Dev"
     servers:
