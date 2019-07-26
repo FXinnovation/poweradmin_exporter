@@ -3,10 +3,11 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/denisenkom/go-mssqldb"
-	"github.com/prometheus/common/log"
 	"strings"
 	"time"
+
+	_ "github.com/denisenkom/go-mssqldb"
+	"github.com/prometheus/common/log"
 )
 
 // SQLServerConnection maps a connection to an SQL Server DB
@@ -24,6 +25,31 @@ type StatData struct {
 	Unit     string
 	StatName string
 	ItemName string
+}
+
+type ConfigComputerInfo struct {
+	CompID  int
+	Name    string
+	Alias   string
+	GroupID int
+}
+
+type ServerMetric struct {
+	Name           string
+	Alias          string
+	GroupID        int
+	StatID         int
+	Value          float64
+	Date           time.Time
+	OwnerType      int
+	ItemName       string
+	StatName       string
+	OwningComputer string
+	CompID         int
+	StatType       int
+	ItemAlias      string
+	Unit           int
+	UnitStr        string
 }
 
 // Connect to the DB
@@ -64,4 +90,103 @@ func (connection *SQLServerConnection) GetStatData(serversID []string) ([]StatDa
 		return nil, fmt.Errorf("failed to read all stats %s", rows.Err().Error())
 	}
 	return stats, nil
+}
+
+func (connection *SQLServerConnection) GetConfigComputerInfo(alias string) (ConfigComputerInfo, error) {
+	sql := fmt.Sprintf(`
+SELECT  TOP 1
+		CompID,
+		Name,
+		Alias,
+		GroupID
+    FROM ConfigComputerInfo
+  WHERE Alias = '%s'
+`, alias)
+	rows, err := connection.conn.Query(sql)
+	if err != nil {
+		log.Error("DB Query failed:", err)
+		return ConfigComputerInfo{}, err
+	}
+	defer rows.Close()
+
+	ci := ConfigComputerInfo{}
+	for rows.Next() {
+		if err := rows.Scan(&ci.CompID, &ci.Name, &ci.Alias, &ci.GroupID); err != nil {
+			return ConfigComputerInfo{}, err
+		}
+	}
+	if rows.Err() != nil {
+		return ConfigComputerInfo{}, fmt.Errorf("error retrieving computer info: %s", rows.Err().Error())
+	}
+	return ci, nil
+}
+
+func (connection *SQLServerConnection) GetAllServerMetric(serverID int) ([]ServerMetric, error) {
+	sql := fmt.Sprintf(`
+SELECT 	CI.Name,
+		CI.Alias,
+		CI.GroupID,
+		D.*
+  FROM ConfigComputerInfo CI
+      INNER JOIN (
+          SELECT SD.*,
+                 St.OwnerType,
+                 St.ItemName,
+                 St.StatName,
+                 St.OwningComputer,
+                 St.CompID,
+                 St.StatType,
+                 St.ItemAlias,
+                 St.Unit,
+                 St.UnitStr
+             FROM
+               (SELECT SD.StatID,
+                       SD.Value,
+                       SD.Date
+                  FROM StatData SD
+                      INNER JOIN (
+                          SELECT StatID,
+                                 MAX(Date) AS latest
+                            FROM StatData
+                            GROUP BY StatID
+                      ) filteredSD ON filteredSD.StatID = SD.StatID
+                                   AND filteredSD.latest = SD.Date
+                ) SD
+              INNER JOIN Statistic St ON (SD.StatID = St.StatID)
+      ) D ON CI.CompID = D.CompID
+  WHERE CI.CompID = %d
+  ORDER BY D.StatID`, serverID)
+
+	rows, err := connection.conn.Query(sql)
+	if err != nil {
+		log.Error("DB Query failed:", err)
+		return nil, err
+	}
+	defer rows.Close()
+	var metrics []ServerMetric
+	for rows.Next() {
+		m := ServerMetric{}
+		if err := rows.Scan(
+			&m.Name,
+			&m.Alias,
+			&m.GroupID,
+			&m.StatID, &m.Value,
+			&m.Date,
+			&m.OwnerType,
+			&m.ItemName,
+			&m.StatName,
+			&m.OwningComputer,
+			&m.CompID,
+			&m.StatType,
+			&m.ItemAlias,
+			&m.Unit,
+			&m.UnitStr); err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, m)
+	}
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("failed to read all metrics %s", rows.Err().Error())
+	}
+	return metrics, nil
 }
