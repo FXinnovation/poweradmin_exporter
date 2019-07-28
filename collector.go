@@ -52,8 +52,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	// SECTION collect data from PA database
-	db := &SQLServerConnection{connectionString: c.Config.Database}
-	err = db.Connect()
+	DB.GetConnection(c.Config)
 	if err != nil {
 		log.Errorf("Failed to connnect to PA database: %s", err.Error())
 		ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
@@ -66,17 +65,17 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		serverList := confGrp.Servers
 
 		if len(serverList) == 0 {
-			serverList, err = db.GetAllServersFor(confGrp.GroupPath)
+			serverList, err = DB.GetAllServersFor(confGrp.GroupPath)
 		}
 
 		for _, server := range serverList {
-			compInfo, err := db.GetConfigComputerInfo(server)
+			compInfo, err := DB.GetConfigComputerInfo(server)
 			if err != nil {
 				log.Error(err.Error())
 				ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
 				return
 			}
-			dbMetrics, err := db.GetAllServerMetric(compInfo.CompID)
+			dbMetrics, err := DB.GetAllServerMetric(compInfo.CompID)
 			if err != nil {
 				log.Error(err.Error())
 				ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)

@@ -10,6 +10,8 @@ import (
 	"github.com/prometheus/common/log"
 )
 
+var DB = &SQLServerConnection{}
+
 // SQLServerConnection maps a connection to an SQL Server DB
 type SQLServerConnection struct {
 	connectionString string
@@ -53,7 +55,7 @@ type ServerMetric struct {
 }
 
 // Connect to the DB
-func (connection *SQLServerConnection) Connect() error {
+func (connection *SQLServerConnection) connect() error {
 	conn, err := sql.Open("mssql", connection.connectionString)
 	if err != nil {
 		return err
@@ -65,6 +67,17 @@ func (connection *SQLServerConnection) Connect() error {
 // Close the DB connection
 func (connection *SQLServerConnection) Close() error {
 	return connection.conn.Close()
+}
+
+func (connection *SQLServerConnection) GetConnection(config Config) error {
+	connection.connectionString = config.Database
+	if connection.conn == nil {
+		err := connection.connect()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // GetStatData returns the stats for the given servers
