@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/common/log"
 )
 
+// DB connection
 var DB = &SQLServerConnection{}
 
 // SQLServerConnection maps a connection to an SQL Server DB
@@ -29,6 +30,7 @@ type StatData struct {
 	ItemName string
 }
 
+// ConfigComputerInfo attributes of a server
 type ConfigComputerInfo struct {
 	CompID  int
 	Name    string
@@ -36,6 +38,7 @@ type ConfigComputerInfo struct {
 	GroupID int
 }
 
+// ServerMetric metric of a server
 type ServerMetric struct {
 	Name           string
 	Alias          string
@@ -69,6 +72,7 @@ func (connection *SQLServerConnection) Close() error {
 	return connection.conn.Close()
 }
 
+// GetConnection gets the connection to the DB
 func (connection *SQLServerConnection) GetConnection(config Config) error {
 	connection.connectionString = config.Database
 	if connection.conn == nil {
@@ -104,6 +108,7 @@ func (connection *SQLServerConnection) GetStatData(serversID []string) ([]StatDa
 	return stats, nil
 }
 
+// GetConfigComputerInfo get the attributes from a server
 func (connection *SQLServerConnection) GetConfigComputerInfo(alias string) (ConfigComputerInfo, error) {
 	sql := fmt.Sprintf(`
 SELECT  TOP 1
@@ -133,6 +138,7 @@ SELECT  TOP 1
 	return ci, nil
 }
 
+// GetAllServersFor get all the servers for a group
 func (connection *SQLServerConnection) GetAllServersFor(group string) ([]string, error) {
 	sql := fmt.Sprintf(`
 SELECT CI.*
@@ -167,6 +173,7 @@ SELECT CI.*
 	return servList, nil
 }
 
+// GetAllServerMetric returns all server metric for a server
 func (connection *SQLServerConnection) GetAllServerMetric(serverID int) ([]ServerMetric, error) {
 	sql := fmt.Sprintf(`
 SELECT 	CI.Name,
