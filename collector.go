@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -38,17 +37,9 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
 		return
 	}
-	log.Infof("Received %d metrics", len(metrics.Values))
+	log.Infof("Received %d status metrics", len(metrics.Values))
 	for _, metric := range metrics.Values {
-		metricName := getFormattedMetricName(metric.MonitorTitle)
-		labels := make(map[string]string, 2)
-		labels["group_path"] = metric.GroupPath
-		labels["server_name"] = metric.ServerName
-		ch <- prometheus.MustNewConstMetric(
-			prometheus.NewDesc(metricName, metricName, nil, labels),
-			prometheus.UntypedValue,
-			getFloatValue(metric.MonitorValue, c.Config),
-		)
+		exposeMetric(metric.MonitorTitle+"_status", getFloatValue(metric.MonitorValue, c.Config), metric.GroupPath, metric.ServerName, ch)
 	}
 
 	// SECTION collect data from PA database
@@ -82,27 +73,43 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 				return
 			}
 			// log.Info(dbMetrics)
-
+			log.Infof("Received %d metrics", len(dbMetrics))
 			for _, dbm := range dbMetrics {
-				metricName := getFormattedMetricName(fmt.Sprintf("%s__%s", dbm.ItemAlias, dbm.UnitStr))
-				labels := make(map[string]string, 2)
-				labels["group_path"] = confGrp.GroupPath
-				labels["server_name"] = server
-				ch <- prometheus.MustNewConstMetric(
-					prometheus.NewDesc(metricName, metricName, nil, labels),
-					prometheus.UntypedValue,
-					dbm.Value,
-				)
+				exposeMetric(getDBMetricName(dbm), dbm.Value, confGrp.GroupPath, server, ch)
 			}
 		}
 	}
 
 }
 
+func getDBMetricName(serverMetric ServerMetric) string {
+	var metricName strings.Builder
+	metricName.WriteString(serverMetric.ItemAlias)
+	if serverMetric.UnitStr != "" {
+		metricName.WriteString("__")
+		metricName.WriteString(serverMetric.UnitStr)
+	} else {
+		log.Infof("Metric %s:%s has no unit str with id %d", serverMetric.ItemName, serverMetric.ItemAlias, serverMetric.Unit)
+	}
+	return metricName.String()
+}
+
+func exposeMetric(originalName string, value float64, group string, server string, ch chan<- prometheus.Metric) {
+	metricName := getFormattedMetricName(originalName)
+	labels := make(map[string]string, 2)
+	labels["group_path"] = group
+	labels["server_name"] = server
+	ch <- prometheus.MustNewConstMetric(
+		prometheus.NewDesc(metricName, metricName, nil, labels),
+		prometheus.UntypedValue,
+		value,
+	)
+}
+
 func getFormattedMetricName(name string) string {
 	// Ensure metric names conform to Prometheus metric name conventions
 	metricName := strings.ReplaceAll(name, " ", "_")
-	metricName = strings.ToLower(metricName + "_status")
+	metricName = strings.ToLower(metricName)
 	metricName = strings.ReplaceAll(metricName, "/", "_per_")
 	metricName = invalidMetricChars.ReplaceAllString(metricName, "_")
 	// metric name cannot start with a digit
