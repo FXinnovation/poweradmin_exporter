@@ -138,3 +138,93 @@ func TestSQLServerConnection_GetAllServersFor(t *testing.T) {
 		})
 	}
 }
+
+func TestSQLServerConnection_GetAllServerMetric(t *testing.T) {
+	type sqlReturn struct {
+		Name           string
+		Alias          string
+		GroupID        int
+		StatID         int
+		Value          float64
+		Date           driver.Value
+		OwnerType      int
+		ItemName       string
+		StatName       string
+		OwningComputer string
+		CompID         int
+		StatType       int
+		ItemAlias      string
+		Unit           int
+		UnitStr        string
+	}
+	type fields struct {
+		connection *SQLServerConnection
+		rows       []sqlReturn
+	}
+	type args struct {
+		serverId int
+	}
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+	connection := &SQLServerConnection{
+		conn: db,
+	}
+	rowTime, _ := time.Parse("2006-01-02 15:04:05.000", "2019-04-24 20:41:35.000")
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []ServerMetric
+		wantErr bool
+	}{
+		{
+			name: "gotone",
+			fields: fields{
+				connection: connection,
+				rows: []sqlReturn{
+					{Name: "FXSERVER", Alias: "FXSERVER", GroupID: 5, StatID: 7, Value: 5.3,
+						Date: driver.Value(rowTime), OwnerType: 4, ItemName: "Power", StatName: "ServiceUp",
+						OwningComputer: "9b14ea69-3ec6-4e3f-ae27-70867c121abb", CompID: 2, StatType: 11,
+						ItemAlias: "Power", Unit: 16, UnitStr: ""},
+				},
+			},
+			args: args{
+				serverId: 2,
+			},
+			want: []ServerMetric{
+				{"FXSERVER", "FXSERVER", 5, 7, 5.3,
+					rowTime, 4, "Power", "ServiceUp",
+					"9b14ea69-3ec6-4e3f-ae27-70867c121abb", 2, 11,
+					"Power", 16, "",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rows := sqlmock.NewRows([]string{"Name", "Alias", "GroupID", "StatID", "Value", "Date", "OwnerType", "ItemName", "StatName",
+				"OwningComputer", "CompID", "StatType", "ItemAlias", "Unit", "UnitStr"})
+			for _, r := range tt.fields.rows {
+				rows.AddRow(r.Name, r.Alias, r.GroupID, r.StatID, r.Value, r.Date, r.OwnerType, r.ItemName, r.StatName,
+					r.OwningComputer, r.CompID, r.StatType, r.ItemAlias, r.Unit, r.UnitStr)
+			}
+			const expectedSQL = "SELECT (.+) FROM ConfigComputerInfo CI (.*) StatData (.*) Statistic (.*) WHERE CI.CompID = (.+)"
+			mock.ExpectQuery(expectedSQL).WillReturnRows(rows)
+			got, err := tt.fields.connection.GetAllServerMetric(tt.args.serverId)
+			// we make sure that all expectations were met
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("there were unfulfilled expectations: %s", err)
+			}
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetAllServersFor() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetAllServersFor() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
