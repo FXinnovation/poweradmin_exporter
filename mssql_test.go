@@ -162,7 +162,7 @@ func TestSQLServerConnection_GetAllServerMetric(t *testing.T) {
 		rows       []sqlReturn
 	}
 	type args struct {
-		serverId int
+		serverID int
 	}
 	db, mock, err := sqlmock.New()
 	if err != nil {
@@ -192,7 +192,7 @@ func TestSQLServerConnection_GetAllServerMetric(t *testing.T) {
 				},
 			},
 			args: args{
-				serverId: 2,
+				serverID: 2,
 			},
 			want: []ServerMetric{
 				{"FXSERVER", "FXSERVER", 5, 7, 5.3,
@@ -214,7 +214,7 @@ func TestSQLServerConnection_GetAllServerMetric(t *testing.T) {
 			}
 			const expectedSQL = "SELECT (.+) FROM ConfigComputerInfo CI (.*) StatData (.*) Statistic (.*) WHERE CI.CompID = (.+)"
 			mock.ExpectQuery(expectedSQL).WillReturnRows(rows)
-			got, err := tt.fields.connection.GetAllServerMetric(tt.args.serverId)
+			got, err := tt.fields.connection.GetAllServerMetric(tt.args.serverID)
 			// we make sure that all expectations were met
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
