@@ -6,7 +6,7 @@ poweradmin_exporter
 *.so
 *.dylib
 
-# Test binary, build with `go test -c`, coverage
+# Test binary, build.sh with `go test -c`, coverage
 *.test
 coverage-test.xml
 
