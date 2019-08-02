@@ -67,8 +67,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	collector := NewCollector(powerAdminClient, config)
+	db := NewSQLServerConnection(config.Database)
+	collector := NewCollector(powerAdminClient, db, config)
 	prometheus.MustRegister(collector)
 
 	http.Handle(*metricsPath, promhttp.Handler())

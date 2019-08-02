@@ -9,19 +9,21 @@ import (
 )
 
 var (
-	powerAdminErrorDesc = prometheus.NewDesc("poweradmin_error", "Error collecting metrics", nil, nil)
-	invalidMetricChars  = regexp.MustCompile("[^a-zA-Z0-9_:]")
+	powerAdminErrorDesc   = prometheus.NewDesc("poweradmin_error", "Error collecting metrics", nil, nil)
+	invalidMetricChars    = regexp.MustCompile("[^a-zA-Z0-9_:]")
+	trailingUnderscoresRe = regexp.MustCompile(`_+$`)
 )
 
 // Collector generic collector type
 type Collector struct {
 	PowerAdminClient PAExternalAPI
+	DB               SQLServerInterface
 	Config           Config
 }
 
 // NewCollector returns the collector
-func NewCollector(client PAExternalAPI, config Config) *Collector {
-	return &Collector{PowerAdminClient: client, Config: config}
+func NewCollector(client PAExternalAPI, db SQLServerInterface, config Config) *Collector {
+	return &Collector{PowerAdminClient: client, DB: db, Config: config}
 }
 
 // Describe to satisfy the collector interface.
@@ -43,9 +45,9 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	// SECTION collect data from PA database
-	DB.GetConnection(c.Config)
+	err = c.DB.GetConnection()
 	if err != nil {
-		log.Errorf("Failed to connnect to PA database: %s", err.Error())
+		log.Errorf("Failed to connect to PA database: %s", err.Error())
 		ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
 		return
 	}
@@ -56,17 +58,17 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		serverList := confGrp.Servers
 
 		if len(serverList) == 0 {
-			serverList, err = DB.GetAllServersFor(confGrp.GroupPath)
+			serverList, err = c.DB.GetAllServersFor(confGrp.GroupPath)
 		}
 
 		for _, server := range serverList {
-			compInfo, err := DB.GetConfigComputerInfo(server)
+			compInfo, err := c.DB.GetConfigComputerInfo(server)
 			if err != nil {
 				log.Error(err.Error())
 				ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
 				return
 			}
-			dbMetrics, err := DB.GetAllServerMetric(compInfo.CompID)
+			dbMetrics, err := c.DB.GetAllServerMetric(compInfo.CompID)
 			if err != nil {
 				log.Error(err.Error())
 				ch <- prometheus.NewInvalidMetric(powerAdminErrorDesc, err)
@@ -116,6 +118,8 @@ func getFormattedMetricName(name string) string {
 	if metricName[0] >= '0' && metricName[0] <= '9' {
 		metricName = "_" + metricName
 	}
+	// remove trailing _
+	metricName = trailingUnderscoresRe.ReplaceAllString(metricName, "")
 	return metricName
 }
 

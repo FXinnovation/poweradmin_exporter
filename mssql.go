@@ -10,13 +10,21 @@ import (
 	"github.com/prometheus/common/log"
 )
 
-// DB connection
-var DB = &SQLServerConnection{}
-
 // SQLServerConnection maps a connection to an SQL Server DB
 type SQLServerConnection struct {
 	connectionString string
 	conn             *sql.DB
+}
+
+// SQLServerInterface interface for sql server connection and methods
+type SQLServerInterface interface {
+	connect() error
+	Close() error
+	GetConnection() error
+	GetStatData(serversID []string) ([]StatData, error)
+	GetConfigComputerInfo(alias string) (ConfigComputerInfo, error)
+	GetAllServersFor(group string) ([]string, error)
+	GetAllServerMetric(serverID int) ([]ServerMetric, error)
 }
 
 // StatData values of the statistics data
@@ -57,6 +65,14 @@ type ServerMetric struct {
 	UnitStr        string
 }
 
+// NewSQLServerConnection returns a new connection object
+func NewSQLServerConnection(connectionString string) *SQLServerConnection {
+	sql := SQLServerConnection{
+		connectionString: connectionString,
+	}
+	return &sql
+}
+
 // Connect to the DB
 func (connection *SQLServerConnection) connect() error {
 	conn, err := sql.Open("mssql", connection.connectionString)
@@ -73,8 +89,7 @@ func (connection *SQLServerConnection) Close() error {
 }
 
 // GetConnection gets the connection to the DB
-func (connection *SQLServerConnection) GetConnection(config Config) error {
-	connection.connectionString = config.Database
+func (connection *SQLServerConnection) GetConnection() error {
 	if connection.conn == nil {
 		err := connection.connect()
 		if err != nil {
